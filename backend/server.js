@@ -10,6 +10,12 @@ import corsOptions from './middleware/corsConfig.js';
 import cors from 'cors';
 import setupSocket from './socket/socketHandlers.js';
 
+
+app.use(cors({
+  origin: "https://tracktogether.vercel.app",
+  credentials: true
+}));
+
 dotenv.config();
 
 const app = express();
