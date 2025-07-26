@@ -42,12 +42,14 @@ function ChatTab({ groupId, members }: ChatTabProps) {
   const initialized = useRef(false);
   const [tagging, setTagging] = useState(false);
   const [space, setSpace] = useState(true);
+
   const fetchMessages = async (groupId: string): Promise<Message[]> => {
     const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/groups/messages/group/${groupId}`);
     console.log(res.data);
     setMessages(res.data.data);
     return res.data.data;
   };
+
   const { data: initialMessages, isLoading } = useQuery({
     queryKey: ["messages", groupId],
     queryFn: () => fetchMessages(groupId),
@@ -69,7 +71,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
       setMessages((prev) => [...prev, message]);
 
       setTimeout(() => {
-        const audio = new Audio("/Discordnotification.mp3"); // Public folder se load hoga
+        const audio = new Audio("/Discordnotification.mp3");
         audio.play().catch((err) => console.log("Audio play error:", err));
       }, 300);
     });
@@ -105,7 +107,6 @@ function ChatTab({ groupId, members }: ChatTabProps) {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return;
 
-    // Mark milestone when user sends first message
     markMilestone('hasUsedChat');
 
     const message = {
@@ -138,6 +139,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
     setNewMessage((prev) => prev + name + " ");
     setSpace(true);
   };
+
   return (
     <div className="flex flex-col h-[70vh]">
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
@@ -154,8 +156,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
               className={`flex ${isYou ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`flex gap-2 max-w-[80%] ${isYou ? "flex-row-reverse" : "flex-row"
-                  }`}
+                className={`flex gap-2 max-w-[80%] ${isYou ? "flex-row-reverse" : "flex-row"}`}
               >
                 {sender && (
                   <Avatar className="h-8 w-8 flex-shrink-0">
@@ -165,18 +166,20 @@ function ChatTab({ groupId, members }: ChatTabProps) {
                 )}
                 <div>
                   <div
-                    className={`rounded-lg px-3 py-2 ${isYou
+                    className={`rounded p-3 ${
+                      isYou
                         ? "bg-primary text-primary-foreground"
                         : message.senderId === "system"
                           ? "bg-muted text-center"
                           : "bg-muted"
-                      }`}
+                    }`}
                   >
                     <p>{message.content}</p>
                   </div>
                   <div
-                    className={`flex gap-1 mt-1 text-xs text-muted-foreground ${isYou ? "justify-end" : "justify-start"
-                      }`}
+                    className={`flex gap-1 mt-1 text-xs text-muted-foreground ${
+                      isYou ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <span>{isYou ? "You" : message.senderName}</span>
                     <span>•</span>
@@ -199,7 +202,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
         {tagging && !space ? (
           members?.map((member) => (
             <div
-              className="tagging p-2"
+              className="tagging p-2 hover:bg-muted cursor-pointer border-b"
               onClick={() => clickOnMentionName(member.name)}
               key={member.clerkId}
             >
@@ -211,7 +214,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
         )}
       </div>
 
-      <div className="border-t pt-4 fix-bottom">
+      <div className="border-t pt-4">
         <form
           className="flex gap-2"
           onSubmit={(e) => {

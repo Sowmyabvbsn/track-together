@@ -4,10 +4,10 @@ import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useIsMobile } from "@/components/ui/use-mobile";
-import MobileFeatureCards from "@/components/landing/mobile/MobileFeatureCards";
-import MobileHowItWorks from "@/components/landing/mobile/MobileHowItWorks";
-import DesktopFeatureCards from "@/components/landing/desktop/DesktopFeatureCards";
-import DesktopHowItWorks from "@/components/landing/desktop/DesktopHowItWorks";
+import MobileFeatureCards from "../components/landing/mobile/MobileFeatureCards";
+import MobileHowItWorks from "../components/landing/mobile/MobileHowItWorks";
+import DesktopFeatureCards from "../components/landing/desktop/DesktopFeatureCards";
+import DesktopHowItWorks from "../components/landing/desktop/DesktopHowItWorks";
 
 // Simple loading spinner component for Suspense fallback
 const LoadingSpinner = () => (
@@ -159,7 +159,7 @@ import {
 } from "@/components/ui/accordion";
 import { useUser } from "@clerk/nextjs";
 import { TypeAnimation } from "react-type-animation";
-import { CardSpotlight } from "@/components/ui/card-spotlight";
+import { CardSpotlight } from "../components/ui/card-spotlight";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {

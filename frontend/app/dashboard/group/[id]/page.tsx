@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Info, MapPin, MessageSquare, Users, Settings, Copy, Link as LinkIcon } from "lucide-react";
 import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaTelegram } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
-import { motion } from "framer-motion";
 import {
   Tooltip,
   TooltipContent,
@@ -37,10 +36,6 @@ import ChatTab from "@/components/Chat/ChatTab";
 import MemberTab from "@/components/Member/MemberTab";
 import axios from "axios";
 import io from "socket.io-client";
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import ShareComponent from "./share";
-import IntelligentChat from "@/components/AI/IntelligentChat";
-import SmartSuggestions from "@/components/AI/SmartSuggestions";
 import { Brain } from "lucide-react";
 import Link from "next/link";
 
@@ -116,17 +111,11 @@ export default function GroupPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [qrCodeLoading, setQrCodeLoading] = useState(true);
-  const [qrCodeError, setQrCodeError] = useState(false);
   const [shareLoading, setShareLoading] = useState<string | null>(null);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-  const resetInviteDialogState = () => {
-    setQrCodeError(false);
-    setShareLoading(null);
-  };
   const initialized = useRef(false);
   const [open, setOpen] = useState(false);
   const toggleTooltip = () => setOpen(!open);
@@ -226,7 +215,7 @@ export default function GroupPage() {
     const toastCooldown = new Map();
     socket.on("distanceAlert", ({ clerkId, otherClerkId, distance }) => {
       const isArchived = group && group.reachTime && new Date(group.reachTime) < new Date();
-      if (isArchived) return; // Do not show toast for archived groups
+      if (isArchived) return;
       if (clerkId === user.id || otherClerkId === user.id) {
         const alertKey = `${clerkId}-${otherClerkId}`;
         const lastToast = toastCooldown.get(alertKey) || 0;
@@ -362,46 +351,6 @@ export default function GroupPage() {
     setNewMessage("");
   };
 
-  useEffect(() => {
-    if (!user || !groupId || !isLoaded) return;
-
-    socket.on("newMessageNotification", ({ message, for: targetClerkId }) => {
-      if (targetClerkId === user.id) {
-        toast({
-          title: `New Message in ${group?.name}`,
-          description: message.content,
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActiveTab("chat")}
-            >
-              View
-            </Button>
-          ),
-        });
-      }
-    });
-
-    return () => {
-      socket.off("newMessageNotification");
-    };
-  }, [user, groupId, group?.name, isLoaded, toast]);
-
-  // Effect to handle QR code loading state
-  useEffect(() => {
-    if (inviteDialogOpen && mounted.current) {
-      // Set QR code to load and then hide loading state after a delay
-      setQrCodeLoading(true);
-      const timer = setTimeout(() => {
-        if (mounted.current) {
-          setQrCodeLoading(false);
-        }
-      }, 800);
-
-      return () => clearTimeout(timer);
-    }
-  }, [inviteDialogOpen]);
   const handleSaveSettings = async () => {
     if (!user || !group || !groupId) return;
     setIsSaving(true);
@@ -454,7 +403,6 @@ export default function GroupPage() {
     const groupName = group?.name || "our ride";
     const joinUrl = `${window.location.origin}/join/${group?.code}`;
 
-    // Create different formats based on platform
     const shareText = encodeURIComponent(`Join my group "${groupName}" on RiderConnect!`);
     const shareUrl = encodeURIComponent(joinUrl);
 
@@ -479,15 +427,12 @@ export default function GroupPage() {
     try {
       const shareUrl = generateShareUrl(platform);
       const windowFeatures = 'width=550,height=450,scrollbars=yes,resizable=yes';
-
-      // For all platforms, use a popup
       const opened = window.open(shareUrl, '_blank', windowFeatures);
 
       if (!opened) {
         throw new Error('Popup was blocked');
       }
 
-      // Clear loading state after a short delay
       setTimeout(() => setShareLoading(null), 500);
     } catch (error) {
       toast({
@@ -501,7 +446,7 @@ export default function GroupPage() {
 
   if (!isLoaded || isFetching) {
     return (
-      <div className="flex max-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4">Loading...</p>
@@ -514,12 +459,8 @@ export default function GroupPage() {
     return null;
   }
 
-  function cn(...classes: any[]): string {
-    return classes.filter(Boolean).join(' ');
-  }
-
   return (
-    <div className="flex max-h-screen flex-col">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-16 z-10 border-b bg-background">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
@@ -531,41 +472,28 @@ export default function GroupPage() {
                   <TooltipTrigger asChild>
                     <Info
                       onClick={toggleTooltip}
-                      className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition"
+                      className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary"
                     />
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="bg-[#192643] ml-3 mt-2 z-[9999] text-white shadow-lg p-4 rounded-lg border border-gray-700 max-w-[90vw] sm:max-w-[400px] text-sm space-y-2"
+                    className="bg-card border p-4 rounded max-w-sm"
                   >
-                    <div>
-                      <p className="font-semibold text-gray-300 text-base sm:text-sm">
-                        Ride Info
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:gap-1">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400 mt-[2px]" />
-                        <p className="text-sm sm:text-xs break-words">
-                          <span className="font-medium">From:</span>{" "}
-                          {group.source}
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400 mt-[2px]" />
-                        <p className="text-sm sm:text-xs break-words">
-                          <span className="font-medium">To:</span>{" "}
-                          {group.destination}
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Users className="w-4 h-4 text-gray-400 mt-[2px]" />
-                        <p className="text-sm sm:text-xs">
-                          <span className="font-medium">
-                            {group.members.length}
-                          </span>{" "}
-                          {group.members.length === 1 ? "member" : "members"}
-                        </p>
+                    <div className="space-y-2">
+                      <p className="font-semibold">Ride Info</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>From: {group.source}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>To: {group.destination}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          <span>{group.members.length} {group.members.length === 1 ? "member" : "members"}</span>
+                        </div>
                       </div>
                     </div>
                   </TooltipContent>
@@ -574,233 +502,102 @@ export default function GroupPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">            
-            <Dialog
-              open={inviteDialogOpen}
-              onOpenChange={(open) => {
-                setInviteDialogOpen(open);
-                if (open) {
-                  // Reset states when opening dialog
-                  setQrCodeLoading(true);
-                  setQrCodeError(false);
-                  // Set a timeout to hide loading after QR code is likely ready
-                  setTimeout(() => setQrCodeLoading(false), 800);
-                } else {
-                  resetInviteDialogState();
-                }
-              }}
-            >
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
               <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="relative group hover:scale-105 active:scale-95 transition-transform"
-                >
+                <Button variant="outline" size="sm">
                   <Users className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Invite</span>
-                  <motion.div
-                    className="absolute inset-0 rounded-md bg-primary/10"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-                  />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95vw] sm:max-w-[500px] h-auto max-h-[95vh] overflow-y-auto p-3 sm:p-4 md:p-6 gap-2 sm:gap-4">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Invite People to {group.name}</DialogTitle>
                   <DialogDescription>
-                    Invite others by scanning the QR code or sharing the invite code below via your preferred communication channels.
+                    Share the invite code or QR code with your friends.
                   </DialogDescription>
                 </DialogHeader>
 
-                {/* <div className="border-b border-muted/30 mb-2 pb-2">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Share the invite link or code with your friends.
-                  </p>
-                </div> */}
-                <div className="grid gap-2 sm:gap-4 py-2 sm:py-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex justify-center"
-                  >
-                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md relative">
-                      {qrCodeLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg z-10 backdrop-blur-sm">
-                          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                        </div>
-                      )}
-
-                      {qrCodeError ? (
-                        <div className="h-[150px] w-[150px] flex flex-col items-center justify-center bg-gray-100 rounded-md p-4 text-center">
-                          <div className="text-destructive mb-2">QR Code Error</div>
-                          <p className="text-xs text-muted-foreground mb-2">Failed to generate QR code</p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setQrCodeError(false);
-                              setQrCodeLoading(true);
-                            }}
-                          >
-                            Retry
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          {/* Use the QRCode component with correct props */}
-                          <QRCodeSVG
-                            value={`${window.location.origin}/join/${group.code}`}
-                            size={120}
-                            className="w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] rounded-md"
-                            level="H"
-                            includeMargin={false}
-                          />
-                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(
-                                `${window.location.origin}/join/${group.code}`,
-                                "QR Code link copied!"
-                              )}
-                              className="text-xs hover:bg-white/20"
-                            >
-                              Copy Link
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+                <div className="space-y-4 py-4">
+                  <div className="flex justify-center">
+                    <div className="bg-white p-4 rounded border">
+                      <QRCodeSVG
+                        value={`${window.location.origin}/join/${group.code}`}
+                        size={150}
+                        level="H"
+                        includeMargin={false}
+                      />
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* Invite Code Section */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="space-y-2"
-                  >
+                  <div className="space-y-2">
                     <Label>Invite Code</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         value={group.code}
                         readOnly
-                        className="bg-secondary/30 font-mono text-base sm:text-lg text-center tracking-wider"
+                        className="bg-secondary/30 font-mono text-center"
                       />
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => copyToClipboard(group.code, "Invite code copied!")}
-                        className="hover:bg-primary hover:text-primary-foreground transition-all transform hover:scale-110 active:scale-95"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* Social Share Section */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                    className="space-y-2"
-                  >
+                  <div className="space-y-2">
                     <Label>Share via</Label>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-5 gap-2">
                       {[
-                        { platform: 'whatsapp', icon: FaWhatsapp, color: '#25D366', label: 'WhatsApp' },
-                        { platform: 'facebook', icon: FaFacebook, color: '#1877F2', label: 'Facebook' },
-                        { platform: 'twitter', icon: FaTwitter, color: '#1DA1F2', label: 'Twitter' },
-                        { platform: 'linkedin', icon: FaLinkedin, color: '#0A66C2', label: 'LinkedIn' },
-                        { platform: 'telegram', icon: FaTelegram, color: '#0088cc', label: 'Telegram' }
-                      ].map(({ platform, icon: Icon, color, label }) => (
+                        { platform: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp' },
+                        { platform: 'facebook', icon: FaFacebook, label: 'Facebook' },
+                        { platform: 'twitter', icon: FaTwitter, label: 'Twitter' },
+                        { platform: 'linkedin', icon: FaLinkedin, label: 'LinkedIn' },
+                        { platform: 'telegram', icon: FaTelegram, label: 'Telegram' }
+                      ].map(({ platform, icon: Icon, label }) => (
                         <Button
                           key={platform}
                           variant="outline"
                           size="icon"
                           disabled={shareLoading !== null}
-                          style={{
-                            backgroundColor: shareLoading === platform ? 'transparent' : undefined
-                          }}
-                          className={cn(
-                            "transition-all duration-300 relative group",
-                            "hover:scale-105 active:scale-95",
-                            "hover:text-white focus:text-white focus:ring-2 focus:ring-offset-1",
-                            "overflow-hidden",
-                            {
-                              "cursor-wait opacity-70": shareLoading === platform,
-                              "hover:bg-[#25D366] hover:border-[#25D366]": platform === 'whatsapp',
-                              "hover:bg-[#1877F2] hover:border-[#1877F2]": platform === 'facebook',
-                              "hover:bg-[#1DA1F2] hover:border-[#1DA1F2]": platform === 'twitter',
-                              "hover:bg-[#0A66C2] hover:border-[#0A66C2]": platform === 'linkedin',
-                              "hover:bg-[#0088cc] hover:border-[#0088cc]": platform === 'telegram'
-                            }
-                          )}
                           onClick={() => handleShare(platform)}
                           title={`Share on ${label}`}
                         >
-                          <div className="relative w-5 h-5 flex items-center justify-center">
-                            {shareLoading === platform ? (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                              </div>
-                            ) : (
-                              <>
-                                <Icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 relative z-10" />
-                                <div
-                                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-full bg-white"
-                                  aria-hidden="true"
-                                />
-                              </>
-                            )}
-                          </div>
-                          <span className="sr-only">Share on {label}</span>
+                          {shareLoading === platform ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          ) : (
+                            <Icon className="h-4 w-4" />
+                          )}
                         </Button>
                       ))}
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* Share Link Section */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, delay: 0.3 }}
-                    className="space-y-2"
-                  >
+                  <div className="space-y-2">
                     <Label>Share Link</Label>
                     <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={`${window.location.origin}/join/${group.code}`}
-                          readOnly
-                          className="bg-secondary/30 font-mono text-[11px] sm:text-sm pr-16 sm:pr-24 truncate"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(
-                            `${window.location.origin}/join/${group.code}`,
-                            "Share link copied!"
-                          )}
-                          className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 h-7 text-xs sm:text-sm hover:bg-secondary/50"
-                        >
-                          Copy Link
-                        </Button>
-                      </div>
+                      <Input
+                        value={`${window.location.origin}/join/${group.code}`}
+                        readOnly
+                        className="bg-secondary/30 font-mono text-xs"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(
+                          `${window.location.origin}/join/${group.code}`,
+                          "Share link copied!"
+                        )}
+                      >
+                        Copy
+                      </Button>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
                 <DialogFooter>
-                  <Button
-                    onClick={() => setInviteDialogOpen(false)}
-                    className="w-full sm:w-auto"
-                  >
+                  <Button onClick={() => setInviteDialogOpen(false)}>
                     Done
                   </Button>
                 </DialogFooter>
@@ -808,20 +605,13 @@ export default function GroupPage() {
             </Dialog>
 
             <Link href={`/dashboard/group/${groupId}/ai-insights`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="relative group hover:scale-105 active:scale-95 transition-transform"
-              >
+              <Button variant="outline" size="sm">
                 <Brain className="h-4 w-4 mr-2 text-primary" />
                 <span className="hidden sm:inline">AI Insights</span>
               </Button>
             </Link>
 
-            <Dialog
-              open={settingsDialogOpen}
-              onOpenChange={setSettingsDialogOpen}
-            >
+            <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Settings className="h-4 w-4 mr-2" />
@@ -862,9 +652,10 @@ export default function GroupPage() {
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col h-full">
-          <div className="border-b flex-shrink-0">
+
+      <main className="flex-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="border-b">
             <div className="container flex items-center justify-center">
               <TabsList className="h-12">
                 <TabsTrigger value="map" className="flex items-center gap-2">
@@ -875,21 +666,18 @@ export default function GroupPage() {
                   <MessageSquare className="h-4 w-4" />
                   <span>Chat</span>
                 </TabsTrigger>
-                <TabsTrigger
-                  value="members"
-                  className="flex items-center gap-2"
-                >
+                <TabsTrigger value="members" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <span>Members</span>
                 </TabsTrigger>
               </TabsList>
             </div>
           </div>
-          {/* Optional: Uncomment if BackgroundBeams is needed */}
-          <div className="container py-6 px-4 flex-1 overflow-hidden">
-            <TabsContent value="map" className="mt-0 h-full">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                <div className="lg:col-span-2">
+
+          <div className="container py-6 px-4">
+            <TabsContent value="map" className="mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3">
                   {location ? (
                     <MapComponent
                       location={location}
@@ -899,38 +687,38 @@ export default function GroupPage() {
                       destination={group?.destination}
                     />
                   ) : (
-                    <p>Loading map...</p>
+                    <div className="h-96 bg-muted rounded flex items-center justify-center">
+                      <p>Loading map...</p>
+                    </div>
                   )}
                 </div>
                 <div className="lg:col-span-1">
-                  <SmartSuggestions
-                    groupId={groupId}
-                    groupData={group}
-                    userLocation={location}
-                    onSuggestionApply={(suggestion) => {
-                      console.log('Applied suggestion:', suggestion);
-                    }}
-                  />
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-medium mb-4">Group Info</h3>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">From:</span>
+                          <p className="font-medium">{group.source}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">To:</span>
+                          <p className="font-medium">{group.destination}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Members:</span>
+                          <p className="font-medium">{group.members.length}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="chat" className="mt-0 h-full">
-              <IntelligentChat
-                groupId={groupId}
-                members={group.members}
-                onSendMessage={(message) => {
-                  const messageData = {
-                    groupId,
-                    clerkId: user?.id,
-                    clerkName: user?.firstName || "User",
-                    content: message,
-                  };
-                  socket.emit("sendMessage", messageData);
-                }}
-                messages={messages}
-              />
+            <TabsContent value="chat" className="mt-0">
+              <ChatTab groupId={groupId} members={group.members} />
             </TabsContent>
-            <TabsContent value="members" className="mt-0 h-full">
+            <TabsContent value="members" className="mt-0">
               <MemberTab group={group} />
             </TabsContent>
           </div>

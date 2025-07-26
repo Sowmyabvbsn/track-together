@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Use Shadcn/UI Avatar
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wifi, WifiOff } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -34,21 +34,14 @@ export default function MemberTab({ group }: MemberTabProps) {
   useEffect(() => {
     if (!isLoaded || !group.members.length) return;
 
-    // Initialize members with current group data
     setMembers(group.members);
 
     const checkMemberStatuses = async () => {
       try {
-        // Connect to socket for real-time updates
         socket.connect();
-        
-        // Join the group room
         socket.emit("join", { clerkId: user?.id, groupId: group._id });
-        
-        // Request initial status update
         socket.emit("requestStatusUpdate", { groupId: group._id });
         
-        // Set up heartbeat for online status
         const heartbeatInterval = setInterval(() => {
           if (user?.id) {
             socket.emit("heartbeat", { clerkId: user.id, groupId: group._id });
@@ -69,7 +62,6 @@ export default function MemberTab({ group }: MemberTabProps) {
 
     const cleanup = checkMemberStatuses();
 
-    // Listen for member status updates
     socket.on("memberStatusUpdate", (updatedMembers: Member[]) => {
       if (Array.isArray(updatedMembers)) {
         setMembers(updatedMembers);
@@ -82,14 +74,13 @@ export default function MemberTab({ group }: MemberTabProps) {
     };
   }, [isLoaded, group.members, group._id, user?.id]);
 
-  // Update members when group prop changes
   useEffect(() => {
     setMembers(group.members);
   }, [group.members]);
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
-      <h2 className="text-xl font-bold mb-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 py-2">
+      <h2 className="text-xl font-bold mb-4 sticky top-0 bg-background py-2">
         Group Members ({members.length})
       </h2>
       
@@ -103,7 +94,7 @@ export default function MemberTab({ group }: MemberTabProps) {
       ) : (
         <div className="flex-1 overflow-y-auto space-y-3 pb-4">
           {members.map((member: Member) => (
-            <Card key={member.clerkId} className="transition-all duration-200 hover:shadow-md">
+            <Card key={member.clerkId}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10 flex-shrink-0">

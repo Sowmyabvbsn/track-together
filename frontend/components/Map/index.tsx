@@ -16,8 +16,6 @@ import "leaflet/dist/leaflet.css";
 import { useUser } from "@clerk/nextjs";
 import L from "leaflet";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-
 
 interface MapComponentProps {
   location: { latitude: number; longitude: number };
@@ -43,11 +41,10 @@ function createAvatarIcon(avatarUrl?: string, isOnline: boolean = false) {
     iconAnchor: [16, 16],
   });
 }
+
 const blueIcon = new L.Icon({
-  iconUrl:
-  "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -55,10 +52,8 @@ const blueIcon = new L.Icon({
 });
 
 const redIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -79,7 +74,7 @@ function MapUpdater({
     if (isInitialLoad && map) {
       const bounds = L.latLngBounds([center]);
       locations.forEach(([, { lat, lng }]) => bounds.extend([lat, lng]));
-      map.fitBounds(bounds, { padding: [100, 100] });
+      map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [map, center, locations, isInitialLoad]);
   return null;
@@ -134,9 +129,7 @@ export default function MapComponent({
 
   async function fetchCoordinates(place: string): Promise<LatLng | null> {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        place
-      )}`
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`
     );
     const data = await res.json();
     if (data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
@@ -144,9 +137,9 @@ export default function MapComponent({
   }
   
   const LoadingOverlay = () => (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm dark:bg-background/90 bg-grid-pattern" style={{ height: '100%', width: '100%' }}>
-      <div className="animate-pulse-gentle flex flex-col items-center space-y-4 p-6 max-w-xs w-full">
-        <div className="shadow-glow rounded-lg bg-card p-4 w-full">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80">
+      <div className="flex flex-col items-center space-y-4 p-6 max-w-xs w-full">
+        <div className="bg-card border rounded p-4 w-full">
           <div className="text-center mb-3 text-sm font-medium text-primary">Loading Map Data</div>
           <Progress value={loadingProgress} className="h-2 w-full" />
           <div className="mt-2 text-xs text-muted-foreground text-center">
@@ -156,6 +149,7 @@ export default function MapComponent({
       </div>
     </div>
   );
+
   async function fetchRoute(from: LatLng, to: LatLng) {
     const res = await fetch(
       `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`
@@ -207,7 +201,6 @@ export default function MapComponent({
     }
   }, [isInitialLoad]);
 
-  // Define different map tile layers
   const mapLayers = {
     standard: {
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -224,113 +217,90 @@ export default function MapComponent({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[350px] xs:min-h-[450px] sm:min-h-[500px] md:min-h-[70vh] lg:min-h-[70vh]">
-      <div 
-        className={cn(
-          "map-container h-full w-full transition-all duration-300 ease-in-out relative shadow-md rounded-lg overflow-hidden",
-          "bg-muted/30 dark:bg-muted/10",
-          "touch-optimized"
-        )}
-        style={{ 
-          position: 'relative',
-          height: '100%',
-          width: '100%',
-          minHeight: 'inherit'
+    <div className="relative w-full h-96 border rounded">
+      {!mapReady && <LoadingOverlay />}
+      <MapContainer 
+        center={userPos} 
+        zoom={13}
+        scrollWheelZoom={true} 
+        className="h-full w-full z-10"
+        zoomControl={false}
+        style={{ height: '100%', width: '100%' }}
+        whenReady={() => {
+          console.log('Map is ready');
+          setMapReady(true);
         }}
       >
-        {!mapReady && <LoadingOverlay />}
-        <MapContainer 
-          center={userPos} 
-          zoom={13}
-          scrollWheelZoom={true} 
-          className="h-full w-full z-10"
-          zoomAnimation={true}
-          fadeAnimation={true}
-          markerZoomAnimation={true}
-          zoomControl={false}
-          style={{ 
-            height: '100%', 
-            width: '100%', 
-            minHeight: 'inherit',
-            position: 'relative',
-            zIndex: 1
-          }}
-          whenReady={() => {
-            console.log('Map is ready');
-            setMapReady(true);
-          }}
-        >
-          <ZoomControl position="topright" />
-          <ScaleControl position="bottomright" metric={true} imperial={false} />
-          
-          <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="Standard">
-              <TileLayer
-                attribution={mapLayers.standard.attribution}
-                url={mapLayers.standard.url}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satellite">
-              <TileLayer
-                attribution={mapLayers.satellite.attribution}
-                url={mapLayers.satellite.url}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Terrain">
-              <TileLayer
-                attribution={mapLayers.terrain.attribution}
-                url={mapLayers.terrain.url}
-              />
-            </LayersControl.BaseLayer>
-          </LayersControl>
-
-          {mapReady && (
-            <>
-              <MapUpdater center={userPos} locations={groupLocations} isInitialLoad={isInitialLoad} />
-
-              {srcCoords && (
-                <Marker position={srcCoords} icon={blueIcon}>
-                  <Popup>Source</Popup>
-                </Marker>
-              )}
-
-              {dstCoords && (
-                <Marker position={dstCoords} icon={redIcon}>
-                  <Popup>Destination</Popup>
-                </Marker>
-              )}
-
-              {routeCoords.length > 0 && (
-                <Polyline positions={routeCoords} pathOptions={{ color: "blue" }} />
-              )}
-
-              <UserMarker
-                position={userPos}
-                avatar={members?.find((m) => m.clerkId === user?.id)?.avatar}
-                isOnline={members?.find((m) => m.clerkId === user?.id)?.isOnline}
-              />
-
-              {groupLocations.map(([clerkId, { lat, lng }]) => (
-                <Marker
-                  key={clerkId}
-                  position={[lat, lng]}
-                  icon={createAvatarIcon(
-                    members?.find((m) => m.clerkId === clerkId)?.avatar,
-                    members?.find((m) => m.clerkId === clerkId)?.isOnline || false
-                  )}
-                >
-                  <Popup>
-                    {members?.find((m) => m.clerkId === clerkId)?.name || clerkId} -{" "}
-                    {members?.find((m) => m.clerkId === clerkId)?.isOnline ? "Online" : "Offline"}
-                  </Popup>
-                </Marker>
-              ))}
-            </>
-          )}
-        </MapContainer>
+        <ZoomControl position="topright" />
+        <ScaleControl position="bottomright" metric={true} imperial={false} />
         
-        {isLoading && <LoadingOverlay />}
-      </div>
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Standard">
+            <TileLayer
+              attribution={mapLayers.standard.attribution}
+              url={mapLayers.standard.url}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Satellite">
+            <TileLayer
+              attribution={mapLayers.satellite.attribution}
+              url={mapLayers.satellite.url}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Terrain">
+            <TileLayer
+              attribution={mapLayers.terrain.attribution}
+              url={mapLayers.terrain.url}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
+
+        {mapReady && (
+          <>
+            <MapUpdater center={userPos} locations={groupLocations} isInitialLoad={isInitialLoad} />
+
+            {srcCoords && (
+              <Marker position={srcCoords} icon={blueIcon}>
+                <Popup>Source</Popup>
+              </Marker>
+            )}
+
+            {dstCoords && (
+              <Marker position={dstCoords} icon={redIcon}>
+                <Popup>Destination</Popup>
+              </Marker>
+            )}
+
+            {routeCoords.length > 0 && (
+              <Polyline positions={routeCoords} pathOptions={{ color: "blue" }} />
+            )}
+
+            <UserMarker
+              position={userPos}
+              avatar={members?.find((m) => m.clerkId === user?.id)?.avatar}
+              isOnline={members?.find((m) => m.clerkId === user?.id)?.isOnline}
+            />
+
+            {groupLocations.map(([clerkId, { lat, lng }]) => (
+              <Marker
+                key={clerkId}
+                position={[lat, lng]}
+                icon={createAvatarIcon(
+                  members?.find((m) => m.clerkId === clerkId)?.avatar,
+                  members?.find((m) => m.clerkId === clerkId)?.isOnline || false
+                )}
+              >
+                <Popup>
+                  {members?.find((m) => m.clerkId === clerkId)?.name || clerkId} -{" "}
+                  {members?.find((m) => m.clerkId === clerkId)?.isOnline ? "Online" : "Offline"}
+                </Popup>
+              </Marker>
+            ))}
+          </>
+        )}
+      </MapContainer>
+      
+      {isLoading && <LoadingOverlay />}
     </div>
   );
 }

@@ -37,7 +37,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import styled, { keyframes } from 'styled-components';
 import { Plus, Users, ArrowRight, Trash2, MapPin, User, Calendar, Clock } from "lucide-react";
 import {
   Tooltip,
@@ -76,9 +75,8 @@ interface PlaceSuggestion {
   display_name: string;
 }
 
-// Simple distance calculation using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in kilometers
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -119,9 +117,7 @@ export default function Dashboard() {
   const [reachDateTime, setReachDateTime] = useState("");
   const [validationErrors, setValidationErrors] = useState<{ startTime?: string; reachTime?: string }>({});
   const [suggestedSource, setSuggestedSource] = useState<PlaceSuggestion[]>([]);
-  const [suggestedDestination, setSuggestedDestination] = useState<
-    PlaceSuggestion[]
-  >([]);
+  const [suggestedDestination, setSuggestedDestination] = useState<PlaceSuggestion[]>([]);
   const [inviteCode, setInviteCode] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -161,7 +157,6 @@ export default function Dashboard() {
       return false;
     }
 
-    // Clear error if validation passes
     if (type === "source") setSourceError("");
     else setDestinationError("");
     return true;
@@ -170,7 +165,6 @@ export default function Dashboard() {
   const handleCreateGroup = async () => {
     if (!user) return;
 
-    // Validate locations first
     const isSourceValid = await validateLocation(source, "source");
     const isDestinationValid = await validateLocation(destination, "destination");
 
@@ -258,12 +252,10 @@ export default function Dashboard() {
   const getGroupMetrics = async (source: string, destination: string) => {
     const key = `${source}-${destination}`;
     
-    // Check if we already have cached metrics
     if (groupMetrics.has(key)) {
       return groupMetrics.get(key);
     }
     
-    // Use simple hash-based calculation for demo purposes
     const hash = (source + destination).split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
@@ -281,7 +273,6 @@ export default function Dashboard() {
     return fallbackMetrics;
   };
 
-  // Load metrics for all groups on component mount
   useEffect(() => {
     const loadMetrics = async () => {
       for (const group of groups) {
@@ -290,27 +281,6 @@ export default function Dashboard() {
     };
     loadMetrics();
   }, [groups]);
-
-  const AnimatedValue: React.FC<{ value: number; suffix?: string }> = ({ value, suffix = "" }) => {
-    const [displayValue, setDisplayValue] = useState(0);
-    useEffect(() => {
-      const duration = 1000;
-      const steps = 20;
-      const increment = value / steps;
-      const interval = duration / steps;
-      let current = 0;
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= value) {
-          current = value;
-          clearInterval(timer);
-        }
-        setDisplayValue(Math.floor(current));
-      }, interval);
-      return () => clearInterval(timer);
-    }, [value]);
-    return <span>{displayValue.toLocaleString()}{suffix}</span>;
-  };
 
   const getTotalMembers = () => {
     return groups.reduce(
@@ -335,6 +305,7 @@ export default function Dashboard() {
   };
 
   if (!isLoaded) return <DashboardSkeleton />;
+
   const fetchSuggestion = async (place: string, sourceType: string) => {
     if (place.length < 2) return;
     try {
@@ -365,20 +336,22 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex-1 container max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 md:py-12">
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2" data-tour="dashboard-header">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome, {user?.firstName || "User"}
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Create or join group rides to track and chat with fellow riders
-          </p>
-        </div>
-        <AnimatedSection className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Overview</h2>
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-7xl mx-auto py-8 px-4">
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="space-y-2" data-tour="dashboard-header">
+            <h1 className="text-3xl font-bold">
+              Welcome, {user?.firstName || "User"}
+            </h1>
+            <p className="text-muted-foreground">
+              Create or join group rides to track and chat with fellow riders
+            </p>
+          </div>
+
+          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard>
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total Rides
@@ -386,21 +359,18 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center">
-                  <div className="mr-4 bg-primary/10 p-2 rounded-full">
+                  <div className="mr-4 bg-primary/10 p-2 rounded">
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">
-                      <AnimatedValue value={groups.length} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Active group rides
-                    </p>
+                    <div className="text-2xl font-bold">{groups.length}</div>
+                    <p className="text-xs text-muted-foreground">Active group rides</p>
                   </div>
                 </div>
               </CardContent>
-            </StatsCard>
-            <StatsCard>
+            </Card>
+
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total Distance
@@ -408,21 +378,18 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center">
-                  <div className="mr-4 bg-accent/10 p-2 rounded-full">
-                    <MapPin className="h-5 w-5 text-accent" />
+                  <div className="mr-4 bg-primary/10 p-2 rounded">
+                    <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">
-                      <AnimatedValue value={groups.length * 245} suffix=" km" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Across all rides
-                    </p>
+                    <div className="text-2xl font-bold">{groups.length * 245} km</div>
+                    <p className="text-xs text-muted-foreground">Across all rides</p>
                   </div>
                 </div>
               </CardContent>
-            </StatsCard>
-            <StatsCard>
+            </Card>
+
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Fellow Riders
@@ -430,21 +397,18 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center">
-                  <div className="mr-4 bg-green-500/10 p-2 rounded-full">
-                    <User className="h-5 w-5 text-green-500" />
+                  <div className="mr-4 bg-primary/10 p-2 rounded">
+                    <User className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">
-                      <AnimatedValue value={getTotalMembers()} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Connected riders
-                    </p>
+                    <div className="text-2xl font-bold">{getTotalMembers()}</div>
+                    <p className="text-xs text-muted-foreground">Connected riders</p>
                   </div>
                 </div>
               </CardContent>
-            </StatsCard>
-            <StatsCard>
+            </Card>
+
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Active Now
@@ -452,47 +416,38 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center">
-                  <div className="mr-4 bg-blue-500/10 p-2 rounded-full">
-                    <Clock className="h-5 w-5 text-blue-500" />
+                  <div className="mr-4 bg-primary/10 p-2 rounded">
+                    <Clock className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">
-                      <AnimatedValue value={getActiveRides()} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Ongoing rides
-                    </p>
+                    <div className="text-2xl font-bold">{getActiveRides()}</div>
+                    <p className="text-xs text-muted-foreground">Ongoing rides</p>
                   </div>
                 </div>
               </CardContent>
-            </StatsCard>
+            </Card>
           </div>
-        </AnimatedSection>
 
-        {/* Action Cards Section */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          {/* Action Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <CreateGroupCard data-tour="create-group-card">
-                  <CardContent className="flex flex-col items-center justify-center h-[200px] gap-4">
-                    <IconContainer className="bg-white/20 p-3">
-                      <Plus className="h-8 w-8" />
-                    </IconContainer>
-                    <p className="font-medium text-lg">Create New Group Ride</p>
-                    <p className="text-white/80 text-sm text-center">
-                      Start a new journey with friends
-                    </p>
+                <Card className="cursor-pointer border-2 border-dashed hover:border-primary" data-tour="create-group-card">
+                  <CardContent className="flex flex-col items-center justify-center h-48 gap-4">
+                    <div className="bg-primary/10 p-4 rounded">
+                      <Plus className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-lg">Create New Group Ride</p>
+                      <p className="text-muted-foreground text-sm">Start a new journey with friends</p>
+                    </div>
                   </CardContent>
-                </CreateGroupCard>
+                </Card>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create a New Group Ride</DialogTitle>
-                  <DialogDescription>
-                    Set up your ride and invite others.
-                  </DialogDescription>
+                  <DialogDescription>Set up your ride and invite others.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -513,7 +468,7 @@ export default function Dashboard() {
                       value={source}
                       onChange={(e) => {
                         setSource(e.target.value);
-                        setSourceError(""); // Clear error when typing
+                        setSourceError("");
                         fetchSuggestion(e.target.value, e.target.id);
                       }}
                       onBlur={() => validateLocation(source, "source")}
@@ -524,21 +479,21 @@ export default function Dashboard() {
                       <p className="text-sm text-red-500">{sourceError}</p>
                     )}
                     {suggestedSource.length > 0 && source.length > 0 && (
-                      <SuggestionList>
+                      <div className="border rounded max-h-48 overflow-y-auto">
                         {suggestedSource.map((place, index) => (
                           <div
-                            className="list p-1"
+                            className="p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
                             key={index}
                             onClick={() => {
                               setSource(place.display_name);
                               setSuggestedSource([]);
-                              setSourceError(""); // Clear error when selecting
+                              setSourceError("");
                             }}
                           >
                             {place.display_name}
                           </div>
                         ))}
-                      </SuggestionList>
+                      </div>
                     )}
                   </div>
                   <div className="grid gap-2">
@@ -549,7 +504,7 @@ export default function Dashboard() {
                       value={destination}
                       onChange={(e) => {
                         setDestination(e.target.value);
-                        setDestinationError(""); // Clear error when typing
+                        setDestinationError("");
                         fetchSuggestion(e.target.value, e.target.id);
                       }}
                       onBlur={() => validateLocation(destination, "destination")}
@@ -559,24 +514,23 @@ export default function Dashboard() {
                     {destinationError && (
                       <p className="text-sm text-red-500">{destinationError}</p>
                     )}
-                    {suggestedDestination.length > 0 &&
-                      destination.length > 0 && (
-                        <SuggestionList>
-                          {suggestedDestination.map((place, index) => (
-                            <div
-                              className="list p-1"
-                              key={index}
-                              onClick={() => {
-                                setDestination(place.display_name);
-                                setSuggestedDestination([]);
-                                setDestinationError(""); // Clear error when selecting
-                              }}
-                            >
-                              {place.display_name}
-                            </div>
-                          ))}
-                        </SuggestionList>
-                      )}
+                    {suggestedDestination.length > 0 && destination.length > 0 && (
+                      <div className="border rounded max-h-48 overflow-y-auto">
+                        {suggestedDestination.map((place, index) => (
+                          <div
+                            className="p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                            key={index}
+                            onClick={() => {
+                              setDestination(place.display_name);
+                              setSuggestedDestination([]);
+                              setDestinationError("");
+                            }}
+                          >
+                            {place.display_name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-2">
@@ -587,7 +541,6 @@ export default function Dashboard() {
                       value={startDateTime}
                       onChange={(e) => {
                         setStartDateTime(e.target.value);
-                        // Clear validation error when user changes the input
                         if (validationErrors.startTime) {
                           setValidationErrors({
                             ...validationErrors,
@@ -595,15 +548,11 @@ export default function Dashboard() {
                           });
                         }
                       }}
-                      className={
-                        validationErrors.startTime ? "border-red-500" : ""
-                      }
+                      className={validationErrors.startTime ? "border-red-500" : ""}
                       required
                     />
                     {validationErrors.startTime && (
-                      <p className="text-sm text-red-500">
-                        {validationErrors.startTime}
-                      </p>
+                      <p className="text-sm text-red-500">{validationErrors.startTime}</p>
                     )}
                   </div>
 
@@ -615,7 +564,6 @@ export default function Dashboard() {
                       value={reachDateTime}
                       onChange={(e) => {
                         setReachDateTime(e.target.value);
-                        // Clear validation error when user changes the input
                         if (validationErrors.reachTime) {
                           setValidationErrors({
                             ...validationErrors,
@@ -623,15 +571,11 @@ export default function Dashboard() {
                           });
                         }
                       }}
-                      className={
-                        validationErrors.reachTime ? "border-red-500" : ""
-                      }
+                      className={validationErrors.reachTime ? "border-red-500" : ""}
                       required
                     />
                     {validationErrors.reachTime && (
-                      <p className="text-sm text-red-500">
-                        {validationErrors.reachTime}
-                      </p>
+                      <p className="text-sm text-red-500">{validationErrors.reachTime}</p>
                     )}
                   </div>
                 </div>
@@ -642,26 +586,25 @@ export default function Dashboard() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
             <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
               <DialogTrigger asChild>
-                <JoinGroupCard data-tour="join-group-card">
-                  <CardContent className="flex flex-col items-center justify-center h-[200px] gap-4">
-                    <IconContainer className="bg-white/20 p-3">
-                      <Users className="h-8 w-8" />
-                    </IconContainer>
-                    <p className="font-medium text-lg">Join Existing Group</p>
-                    <p className="text-white/80 text-sm text-center">
-                      Connect with other riders using a code
-                    </p>
+                <Card className="cursor-pointer border-2 border-dashed hover:border-primary" data-tour="join-group-card">
+                  <CardContent className="flex flex-col items-center justify-center h-48 gap-4">
+                    <div className="bg-primary/10 p-4 rounded">
+                      <Users className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-lg">Join Existing Group</p>
+                      <p className="text-muted-foreground text-sm">Connect with other riders using a code</p>
+                    </div>
                   </CardContent>
-                </JoinGroupCard>
+                </Card>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Join a Group Ride</DialogTitle>
-                  <DialogDescription>
-                    Enter the invite code to join.
-                  </DialogDescription>
+                  <DialogDescription>Enter the invite code to join.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -682,438 +625,179 @@ export default function Dashboard() {
               </DialogContent>
             </Dialog>
           </div>
-        </section>
 
-        {/* Groups Section */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">
-              Upcoming Group Rides
-              <Link href='/groups'>
-                <p
-                  className="text-xs ml-2 inline-block transition-all duration-300 hover:translate-y-[-2px] hover:underline"
-                  style={{ color: "rgb(42 140 238)" }}
-                >
-                  View all Group
-                </p>
-              </Link>
-            </h2>
-
-            <div className="text-sm text-muted-foreground">
-              {groups.length > 0
-                ? `${groups.length} ${groups.length === 1 ? "group" : "groups"}`
-                : ""}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groups.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center p-8 border border-dashed rounded-lg bg-muted/30 text-center transition-all hover:bg-muted/40">
-                <div className="mb-4 opacity-70">
-                  <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground font-medium">
-                    No groups yet
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create a new group or join one using an invite code
-                </p>
+          {/* Groups Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">
+                Upcoming Group Rides
+                <Link href='/groups' className="text-sm text-primary ml-2 hover:underline">
+                  View all Groups
+                </Link>
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                {groups.length > 0 ? `${groups.length} ${groups.length === 1 ? "group" : "groups"}` : ""}
               </div>
-            ) : (
-              groups.slice(0, 3).map((group: Group) => (
-                <GroupCard key={group._id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <GradientBorder>
-                        <div className="px-2 py-1">
-                          <CardTitle className="text-lg font-semibold">
-                            {group.name}
-                          </CardTitle>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {groups.length === 0 ? (
+                <div className="col-span-full">
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground font-medium mb-2">No groups yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Create a new group or join one using an invite code
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                groups.slice(0, 3).map((group: Group) => (
+                  <Card key={group._id} className="hover:border-primary">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">{group.name}</CardTitle>
+                          <CardDescription>
+                            Created {new Date(group.createdAt || Date.now()).toLocaleDateString()} • {group.code}
+                          </CardDescription>
                         </div>
-                      </GradientBorder>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-200"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Group</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure? This cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() =>
-                                handleDeleteGroup(group._id, group.name)
-                              }
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                    <CardDescription>
-                      Created{" "}
-                      {new Date(
-                        group.createdAt || Date.now()
-                      ).toLocaleDateString()}{" "}
-                      • {group.code}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Route info */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">
-                            {group.source}
-                          </span>
-                          <ArrowRight className="h-3 w-3" />
-                          <span className="text-muted-foreground">
-                            {group.destination}
-                          </span>
-                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Group</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure? This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteGroup(group._id, group.name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-
-                      {/* Stats */}
-                      {(() => {
-                        const key = `${group.source}-${group.destination}`;
-                        const metrics = groupMetrics.get(key) || {
-                          distance: 0,
-                          duration: { hours: 0, minutes: 0 }
-                        };
-                        return (
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">
-                                Estimated Distance
-                              </p>
-                              <p className="font-medium">
-                                {formatDistance(metrics.distance)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">
-                                Est. Duration
-                              </p>
-                              <p className="font-medium">
-                                {formatDuration(metrics.duration.hours * 60 + metrics.duration.minutes)}
-                              </p>
-                            </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">{group.source}</span>
+                            <ArrowRight className="h-3 w-3" />
+                            <span className="text-muted-foreground">{group.destination}</span>
                           </div>
-                        );
-                      })()}
+                        </div>
+                        
+                        {(() => {
+                          const key = `${group.source}-${group.destination}`;
+                          const metrics = groupMetrics.get(key) || {
+                            distance: 0,
+                            duration: { hours: 0, minutes: 0 }
+                          };
+                          return (
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-muted-foreground">Estimated Distance</p>
+                                <p className="font-medium">{formatDistance(metrics.distance)}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Est. Duration</p>
+                                <p className="font-medium">
+                                  {formatDuration(metrics.duration.hours * 60 + metrics.duration.minutes)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
-                      {/* Members section */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex -space-x-2">
-                          {group.members
-                            .slice(0, 4)
-                            .map((member: Member, i: number) => (
+                        <div className="flex items-center justify-between">
+                          <div className="flex -space-x-2">
+                            {group.members.slice(0, 4).map((member: Member, i: number) => (
                               <TooltipProvider key={i}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="h-8 w-8 rounded-full bg-primary/15 border border-background flex items-center justify-center text-xs font-medium shadow-sm transition-all hover:scale-110">
+                                    <div className="h-8 w-8 rounded-full bg-primary/15 border-2 border-background flex items-center justify-center text-xs font-medium">
                                       {member.name.charAt(0)}
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>{member.name}</p>
-                                    {member.isOnline && (
-                                      <span className="ml-2 text-green-500">
-                                        ●
-                                      </span>
-                                    )}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             ))}
-                          {group.members.length > 4 && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="h-8 w-8 rounded-full bg-muted/80 border border-background flex items-center justify-center text-xs font-medium shadow-sm">
-                                    +{group.members.length - 4}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{group.members.length - 4} more members</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
+                            {group.members.length > 4 && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                                      +{group.members.length - 4}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{group.members.length - 4} more members</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                          <Badge variant="secondary">
+                            {group.members.length} {group.members.length === 1 ? "member" : "members"}
+                          </Badge>
                         </div>
-                        <Badge variant="secondary">
-                          {group.members.length}{" "}
-                          {group.members.length === 1 ? "member" : "members"}
-                        </Badge>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <Link
-                      href={`/dashboard/group/${group._id}`}
-                      className="w-full"
-                    >
-                      <Button variant="outline" size="sm" className="w-full">
-                        <span>View Group</span>
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </GroupCard>
-              ))
-            )}
+                    </CardContent>
+                    <CardFooter className="pt-2">
+                      <Link href={`/dashboard/group/${group._id}`} className="w-full">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <span>View Group</span>
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
 }
-// Animation keyframes
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const slideIn = keyframes`
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-// Styled components for cards
-const CreateGroupCard = styled(Card)`
-  cursor: pointer;
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--accent)) 100%
-  );
-  border: none;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  position: relative;
-  animation: ${fadeIn} 0.5s ease;
-  border-radius: var(--radius);
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 20px rgba(99, 102, 241, 0.2);
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-  }
-
-  &:hover::after {
-    transform: translateX(100%);
-  }
-
-  * {
-    color: white;
-  }
-`;
-const JoinGroupCard = styled(Card)`
-  cursor: pointer;
-  background: linear-gradient(
-    135deg,
-    hsl(var(--accent)) 0%,
-    hsl(var(--primary)) 100%
-  );
-  border: none;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  position: relative;
-  animation: ${fadeIn} 0.5s ease;
-  border-radius: var(--radius);
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 20px rgba(16, 185, 129, 0.2);
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-  }
-
-  &:hover::after {
-    transform: translateX(100%);
-  }
-
-  * {
-    color: white;
-  }
-`;
-const GroupCard = styled(Card)`
-  transition: all 0.3s ease;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  animation: ${fadeIn} 0.5s ease;
-  border-radius: var(--radius);
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    border-color: hsl(var(--accent) / 0.2);
-  }
-`;
-
-const ActionButton = styled(Button)`
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: scale(1.03);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
-`;
-
-const IconContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(4px);
-  &:hover {
-    animation: ${pulse} 0.8s ease infinite;
-  }
-`;
-
-const MemberAvatars = styled.div`
-  display: flex;
-  margin-top: 0.5rem;
-  align-items: center;
-`;
-const SuggestionList = styled.div`
-  display: flex;
-  flex-direction: column;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  max-height: 200px;
-  overflow-y: auto;
-  margin-top: 0.25rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  z-index: 10;
-  background-color: hsl(var(--background));
-  animation: ${fadeIn} 0.2s ease;
-
-  .list {
-    padding: 0.75rem 1rem;
-    transition: all 0.2s ease;
-    border-bottom: 1px solid hsl(var(--border));
-    cursor: pointer;
-    font-size: 0.875rem;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    &:hover {
-      background-color: hsl(var(--muted));
-      color: hsl(var(--accent));
-    }
-  }
-`;
-
-// Stats and animation styled components
-const StatsCard = styled(Card)`
-  transition: all 0.3s ease;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-    border-color: hsl(var(--accent) / 0.2);
-  }
-`;
-
-const AnimatedSection = styled.section`
-  animation: ${fadeIn} 0.5s ease;
-`;
-
-const GradientBorder = styled.div`
-  position: relative;
-  padding: 1px;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
-
-  > div {
-    background: hsl(var(--background));
-    border-radius: calc(var(--radius) - 1px);
-  }
-`;
-
-// Loading skeleton components
-const CardSkeleton = () => (
-  <div className="space-y-3">
-    <Skeleton className="h-[200px] w-full rounded-lg" />
-  </div>
-);
 
 const DashboardSkeleton = () => (
-  <div className="flex-1 container max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-8">
-    {/* Header skeleton */}
+  <div className="container max-w-7xl mx-auto py-8 px-4 space-y-8">
     <div className="space-y-2">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-4 w-96" />
     </div>
-
-    {/* Stats skeleton */}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {[1, 2, 3, 4].map((i) => (
-        <Skeleton key={i} className="h-[120px] rounded-lg" />
+        <Skeleton key={i} className="h-32" />
       ))}
     </div>
-
-    {/* Actions skeleton */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {[1, 2].map((i) => (
-        <Skeleton key={i} className="h-[200px] rounded-lg" />
+        <Skeleton key={i} className="h-48" />
       ))}
     </div>
-
-    {/* Groups skeleton */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-[250px] rounded-lg" />
+        <Skeleton key={i} className="h-64" />
       ))}
     </div>
   </div>
