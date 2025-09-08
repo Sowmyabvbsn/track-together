@@ -13,7 +13,7 @@ import OnboardingAssistant from "@/components/OnboardingAssistant"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "GroupTrack - Real-Time Group Tracking System",
+  title: "TrackTogether - Real-Time Group Tracking System",
   description:
     "Track your friends and family in real-time, chat with your group, and get alerts when someone strays too far.",
 }

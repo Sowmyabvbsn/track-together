@@ -65,7 +65,7 @@ function HowItWorksSection() {
           How It Works
         </h2>
         <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-          Get started with RiderConnect in just a few simple steps
+          Get started with TrackTogether in just a few simple steps
         </p>
         <div className="w-full max-w-6xl mx-auto">
           <Suspense fallback={<LoadingSpinner />}>
@@ -108,7 +108,7 @@ function HeroSection() {
           <div className="relative w-[300px] h-[400px] md:w-[400px] md:h-[500px] shadow-glow rounded-2xl overflow-hidden">
             <Image
               src="/images/hero-app-preview.png"
-              alt="RiderConnect App Preview"
+              alt="TrackTogether App Preview"
               fill
               sizes="(max-width: 768px) 300px, 400px"
               priority
@@ -1000,7 +1000,7 @@ export default function App() {
                 <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
                   {userId
                     ? "Create your first group and start tracking together"
-                    : "Join thousands of groups who stay connected with GroupTrack"}
+                    : "Join thousands of groups who stay connected with TrackTogether"}
                 </p>
               </div>
               <motion.div
@@ -1202,7 +1202,7 @@ export default function App() {
           <div className="flex flex-col gap-2 md:gap-4 lg:gap-6">
             <div className="flex items-center gap-2">
               <MapPin className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">RiderConnect</span>
+              <span className="text-xl font-bold">TrackTogether</span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Stay connected with your group, wherever you go.
@@ -1294,7 +1294,7 @@ export default function App() {
         <div className="border-t py-6">
           <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              © 2025 RiderConnect. All rights reserved.
+              © 2025 TrackTogether. All rights reserved.
             </p>
             <div className="flex gap-4">
               <Link

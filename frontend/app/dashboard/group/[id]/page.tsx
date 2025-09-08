@@ -403,7 +403,7 @@ export default function GroupPage() {
     const groupName = group?.name || "our ride";
     const joinUrl = `${window.location.origin}/join/${group?.code}`;
 
-    const shareText = encodeURIComponent(`Join my group "${groupName}" on RiderConnect!`);
+    const shareText = encodeURIComponent(`Join my group "${groupName}" on TrackTogether!`);
     const shareUrl = encodeURIComponent(joinUrl);
 
     switch (platform) {

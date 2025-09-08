@@ -13,7 +13,7 @@ const steps: Step[] = [
   {
     id: "create-account",
     title: "Create Your Account",
-    description: "Sign up for RiderConnect in seconds using your email or social accounts. Your data is always secure and private.",
+    description: "Sign up for TrackTogether in seconds using your email or social accounts. Your data is always secure and private.",
     icon: "/icons/user-plus.svg"
   },
   {
