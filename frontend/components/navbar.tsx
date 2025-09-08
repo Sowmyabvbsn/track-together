@@ -29,7 +29,7 @@ export default function Navbar() {
             <MapPin className="h-5 w-5 text-primary" />
           </div>
           <Link href="/" className="text-xl font-bold text-primary">
-            RiderConnect
+            TrackTogether
           </Link>
         </div>
 
