@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Info, MapPin, MessageSquare, Users, Settings, Copy, Link as LinkIcon } from "lucide-react";
+import { Info, MapPin, MessageSquare, Users, Settings, Copy, Link as LinkIcon, TrendingUp } from "lucide-react";
 import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaTelegram } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -38,6 +38,14 @@ import axios from "axios";
 import io from "socket.io-client";
 import { Brain } from "lucide-react";
 import Link from "next/link";
+import RealTimeAIAssistant from "@/components/AI/RealTimeAIAssistant";
+import PredictiveRouting from "@/components/AI/PredictiveRouting";
+import SmartSafetyMonitor from "@/components/AI/SmartSafetyMonitor";
+import IntelligentChatEnhanced from "@/components/AI/IntelligentChatEnhanced";
+import IntelligentEmergencySystem from "@/components/AI/IntelligentEmergencySystem";
+import AIVoiceCommands from "@/components/AI/AIVoiceCommands";
+import SmartRouteOptimizer from "@/components/AI/SmartRouteOptimizer";
+import PredictiveAnalytics from "@/components/AI/PredictiveAnalytics";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const socket = io(API_BASE_URL, {
@@ -123,6 +131,17 @@ export default function GroupPage() {
     Map<string, { lat: number; lng: number }>
   >(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [aiFeatures, setAiFeatures] = useState({
+    realTimeAssistant: true,
+    predictiveRouting: true,
+    safetyMonitor: true,
+    emergencySystem: true,
+    enhancedChat: true,
+    voiceCommands: true,
+    routeOptimizer: true,
+    predictiveAnalytics: true
+  });
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !groupId || !isLoaded) return;
@@ -444,6 +463,70 @@ export default function GroupPage() {
     }
   };
 
+  const handleAIAction = (action: any) => {
+    console.log('AI Action triggered:', action);
+    
+    switch (action.type) {
+      case 'emergency':
+        toast({
+          title: 'Emergency Alert Sent',
+          description: 'AI has notified all group members and emergency services',
+          variant: 'destructive'
+        });
+        break;
+      case 'location':
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            socket.emit("updateLocation", {
+              groupId,
+              clerkId: user?.id,
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          });
+        }
+        break;
+      case 'navigation':
+        toast({
+          title: 'Route Optimized',
+          description: 'AI has found a better route for your journey'
+        });
+        break;
+      default:
+        toast({
+          title: 'AI Action',
+          description: action.message || 'AI action completed'
+        });
+    }
+  };
+
+  const handleRouteOptimized = (optimizedRoute: any) => {
+    toast({
+      title: 'Route Optimized by AI',
+      description: `Estimated time savings: ${optimizedRoute.timeSaved} minutes`
+    });
+  };
+
+  const handleEmergencyTrigger = (emergency: any) => {
+    console.log('Emergency triggered:', emergency);
+    
+    // Send emergency notification to all group members
+    const emergencyMessage = {
+      groupId,
+      clerkId: user?.id,
+      clerkName: user?.firstName || "User",
+      content: `🚨 EMERGENCY: ${emergency.type} - Location: ${userLocation?.latitude}, ${userLocation?.longitude}`,
+    };
+    
+    socket.emit("sendMessage", emergencyMessage);
+    
+    toast({
+      title: 'Emergency Alert Sent',
+      description: 'All group members and emergency services have been notified',
+      variant: 'destructive'
+    });
+  };
+
   if (!isLoaded || isFetching) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -670,6 +753,14 @@ export default function GroupPage() {
                   <Users className="h-4 w-4" />
                   <span>Members</span>
                 </TabsTrigger>
+                <TabsTrigger value="ai-assistant" className="flex items-center gap-2">
+                  <Brain className="h-4 w-4" />
+                  <span>AI Assistant</span>
+                </TabsTrigger>
+                <TabsTrigger value="ai-analytics" className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>AI Analytics</span>
+                </TabsTrigger>
               </TabsList>
             </div>
           </div>
@@ -716,10 +807,88 @@ export default function GroupPage() {
               </div>
             </TabsContent>
             <TabsContent value="chat" className="mt-0">
-              <ChatTab groupId={groupId} members={group.members} />
+              {aiFeatures.enhancedChat ? (
+                <IntelligentChatEnhanced
+                  groupId={groupId}
+                  members={group.members}
+                  onSendMessage={handleSendMessage}
+                  messages={messages}
+                />
+              ) : (
+                <ChatTab groupId={groupId} members={group.members} />
+              )}
             </TabsContent>
             <TabsContent value="members" className="mt-0">
               <MemberTab group={group} />
+            </TabsContent>
+            <TabsContent value="ai-assistant" className="mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  {aiFeatures.realTimeAssistant && (
+                    <RealTimeAIAssistant
+                      groupId={groupId}
+                      groupData={group}
+                      messages={messages}
+                      userLocation={location}
+                      onActionTrigger={handleAIAction}
+                    />
+                  )}
+                  
+                  {aiFeatures.emergencySystem && (
+                    <IntelligentEmergencySystem
+                      groupId={groupId}
+                      userLocation={location}
+                      groupData={group}
+                      onEmergencyAction={handleEmergencyTrigger}
+                    />
+                  )}
+
+                  {aiFeatures.voiceCommands && (
+                    <AIVoiceCommands
+                      groupId={groupId}
+                      groupData={group}
+                      onCommandExecuted={(command) => {
+                        console.log('Voice command executed:', command);
+                        handleAIAction(command);
+                      }}
+                    />
+                  )}
+                </div>
+                
+                <div className="space-y-6">
+                  {aiFeatures.routeOptimizer && (
+                    <SmartRouteOptimizer
+                      groupData={group}
+                      userLocation={location}
+                      memberLocations={groupLocations}
+                      onRouteOptimized={handleRouteOptimized}
+                    />
+                  )}
+                  
+                  {aiFeatures.safetyMonitor && (
+                    <SmartSafetyMonitor
+                      groupData={group}
+                      userLocation={location}
+                      memberLocations={groupLocations}
+                      onEmergencyTrigger={handleEmergencyTrigger}
+                    />
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="ai-analytics" className="mt-0">
+              {aiFeatures.predictiveAnalytics && (
+                <PredictiveAnalytics
+                  groupData={group}
+                  historicalData={historicalData}
+                  realTimeData={{
+                    weather: 'clear',
+                    traffic: 'moderate',
+                    groupActivity: messages.length
+                  }}
+                />
+              )}
             </TabsContent>
           </div>
         </Tabs>

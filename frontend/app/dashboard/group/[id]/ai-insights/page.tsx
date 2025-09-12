@@ -6,10 +6,15 @@ import { useUser } from '@clerk/nextjs';
 import { useGroups } from '@/contexts/group-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Brain } from 'lucide-react';
+import { ArrowLeft, Brain, Mic, Navigation } from 'lucide-react';
 import SmartSuggestions from '@/components/AI/SmartSuggestions';
 import PredictiveInsights from '@/components/AI/PredictiveInsights';
 import SmartNotifications from '@/components/AI/SmartNotifications';
+import PredictiveAnalytics from '@/components/AI/PredictiveAnalytics';
+import AIInsightsDashboard from '@/components/AI/AIInsightsDashboard';
+import RealTimeAIAssistant from '@/components/AI/RealTimeAIAssistant';
+import AIVoiceCommands from '@/components/AI/AIVoiceCommands';
+import SmartRouteOptimizer from '@/components/AI/SmartRouteOptimizer';
 import { motion } from 'framer-motion';
 
 export default function AIInsightsPage() {
@@ -23,6 +28,8 @@ export default function AIInsightsPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>();
   const [memberLocations, setMemberLocations] = useState<Map<string, { lat: number; lng: number }>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !groupId || !isLoaded) return;
@@ -35,6 +42,17 @@ export default function AIInsightsPage() {
           return;
         }
         setGroup(fetchedGroup);
+        
+        // Fetch messages for AI analysis
+        try {
+          const messagesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/messages/group/${groupId}`);
+          if (messagesRes.ok) {
+            const messagesData = await messagesRes.json();
+            setMessages(messagesData.data || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch messages:', error);
+        }
       } catch (error) {
         console.error('Failed to fetch group:', error);
         router.push('/dashboard');
@@ -129,18 +147,34 @@ export default function AIInsightsPage() {
           transition={{ delay: 0.1 }}
         >
           <Tabs defaultValue="suggestions" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-7 mb-8">
               <TabsTrigger value="suggestions" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
-                Smart Suggestions
+                Suggestions
               </TabsTrigger>
-              <TabsTrigger value="insights" className="flex items-center gap-2">
+              <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
-                Predictive Insights
+                Dashboard
               </TabsTrigger>
               <TabsTrigger value="notifications" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
-                Smart Notifications
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="assistant" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                Assistant
+              </TabsTrigger>
+              <TabsTrigger value="voice" className="flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                Voice
+              </TabsTrigger>
+              <TabsTrigger value="routing" className="flex items-center gap-2">
+                <Navigation className="h-4 w-4" />
+                Routing
               </TabsTrigger>
             </TabsList>
 
@@ -159,16 +193,24 @@ export default function AIInsightsPage() {
               </motion.div>
             </TabsContent>
 
-            <TabsContent value="insights" className="space-y-6">
+            <TabsContent value="dashboard" className="space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <PredictiveInsights
+                <AIInsightsDashboard
+                  groupId={groupId}
                   groupData={group}
-                  userLocation={userLocation}
-                  memberLocations={memberLocations}
+                  messages={messages}
+                  locations={Array.from(memberLocations.entries()).map(([clerkId, loc]) => ({
+                    clerkId,
+                    ...loc,
+                    lastUpdated: new Date()
+                  }))}
+                  onInsightAction={(action) => {
+                    console.log('AI Insight Action:', action);
+                  }}
                 />
               </motion.div>
             </TabsContent>
@@ -183,6 +225,75 @@ export default function AIInsightsPage() {
                   groupId={groupId}
                   userId={user?.id || ''}
                   onSettingsChange={handleNotificationSettingsChange}
+                />
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <PredictiveAnalytics
+                  groupData={group}
+                  historicalData={historicalData}
+                  realTimeData={{
+                    weather: 'clear',
+                    traffic: 'moderate',
+                    groupActivity: messages.length
+                  }}
+                />
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="assistant" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <RealTimeAIAssistant
+                  groupId={groupId}
+                  groupData={group}
+                  messages={[]}
+                  userLocation={userLocation}
+                  onActionTrigger={(action) => {
+                    console.log('AI Action:', action);
+                  }}
+                />
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="voice" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <AIVoiceCommands
+                  groupId={groupId}
+                  groupData={group}
+                  onCommandExecuted={(command) => {
+                    console.log('Voice Command:', command);
+                  }}
+                />
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="routing" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <SmartRouteOptimizer
+                  groupData={group}
+                  userLocation={userLocation}
+                  memberLocations={memberLocations}
+                  onRouteOptimized={(route) => {
+                    console.log('Route Optimized:', route);
+                  }}
                 />
               </motion.div>
             </TabsContent>
