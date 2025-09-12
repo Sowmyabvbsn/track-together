@@ -1,13 +1,12 @@
 "use client";
 
-import "../[id]/chat.css";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Info, MapPin, MessageSquare, Users, Settings, Copy, Link as LinkIcon, TrendingUp } from "lucide-react";
+import { Info, MapPin, MessageSquare, Users, Settings, Copy, TrendingUp } from "lucide-react";
 import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaTelegram } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -37,8 +36,7 @@ import MemberTab from "@/components/Member/MemberTab";
 import axios from "axios";
 import io from "socket.io-client";
 import { Brain } from "lucide-react";
-import Link from "next/link";
-import RealTimeAIAssistant from "@/components/AI/RealTimeAIAssistant";
+import RealTimeAIAssistant from "@/components/AI/RealtimeAIAssistant";
 import PredictiveRouting from "@/components/AI/PredictiveRouting";
 import SmartSafetyMonitor from "@/components/AI/SmartSafetyMonitor";
 import IntelligentChatEnhanced from "@/components/AI/IntelligentChatEnhanced";
@@ -46,6 +44,7 @@ import IntelligentEmergencySystem from "@/components/AI/IntelligentEmergencySyst
 import AIVoiceCommands from "@/components/AI/AIVoiceCommands";
 import SmartRouteOptimizer from "@/components/AI/SmartRouteOptimizer";
 import PredictiveAnalytics from "@/components/AI/PredictiveAnalytics";
+import Link from "next/link";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const socket = io(API_BASE_URL, {
@@ -142,6 +141,7 @@ export default function GroupPage() {
     predictiveAnalytics: true
   });
   const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const userLocation = location;
 
   useEffect(() => {
     if (!user || !groupId || !isLoaded) return;
@@ -515,7 +515,7 @@ export default function GroupPage() {
       groupId,
       clerkId: user?.id,
       clerkName: user?.firstName || "User",
-      content: `🚨 EMERGENCY: ${emergency.type} - Location: ${userLocation?.latitude}, ${userLocation?.longitude}`,
+      content: `🚨 EMERGENCY: ${emergency.type} - Location: ${location?.latitude}, ${location?.longitude}`,
     };
     
     socket.emit("sendMessage", emergencyMessage);
@@ -524,6 +524,14 @@ export default function GroupPage() {
       title: 'Emergency Alert Sent',
       description: 'All group members and emergency services have been notified',
       variant: 'destructive'
+    });
+  };
+
+  const handleRouteUpdate = (route: any) => {
+    console.log('Route updated:', route);
+    toast({
+      title: 'Route Updated',
+      description: 'Your route has been updated with AI optimization'
     });
   };
 
@@ -829,15 +837,23 @@ export default function GroupPage() {
                       groupId={groupId}
                       groupData={group}
                       messages={messages}
-                      userLocation={location}
+                      userLocation={userLocation}
                       onActionTrigger={handleAIAction}
                     />
                   )}
                   
+                  {aiFeatures.predictiveRouting && (
+                    <PredictiveRouting
+                      groupData={group}
+                      userLocation={userLocation}
+                      onRouteUpdate={handleRouteUpdate}
+                    />
+                  )}
+
                   {aiFeatures.emergencySystem && (
                     <IntelligentEmergencySystem
                       groupId={groupId}
-                      userLocation={location}
+                      userLocation={userLocation}
                       groupData={group}
                       onEmergencyAction={handleEmergencyTrigger}
                     />
@@ -859,7 +875,7 @@ export default function GroupPage() {
                   {aiFeatures.routeOptimizer && (
                     <SmartRouteOptimizer
                       groupData={group}
-                      userLocation={location}
+                      userLocation={userLocation}
                       memberLocations={groupLocations}
                       onRouteOptimized={handleRouteOptimized}
                     />
@@ -868,7 +884,7 @@ export default function GroupPage() {
                   {aiFeatures.safetyMonitor && (
                     <SmartSafetyMonitor
                       groupData={group}
-                      userLocation={location}
+                      userLocation={userLocation}
                       memberLocations={groupLocations}
                       onEmergencyTrigger={handleEmergencyTrigger}
                     />

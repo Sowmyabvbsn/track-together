@@ -29,3 +29,20 @@ export function generateInviteCode(length = 6): string {
   return result
 }
 
+// Format distance for display
+export function formatDistance(distance: number): string {
+  if (distance < 1) {
+    return `${(distance * 1000).toFixed(0)}m`;
+  }
+  return `${distance.toFixed(1)}km`;
+}
+
+// Format duration for display
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
+}

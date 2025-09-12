@@ -16,11 +16,21 @@ import {
   Route,
   Fuel,
   DollarSign,
-  TreePine
+  TreePine,
+  Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RealTimeAIService } from '@/lib/ai-real-time';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  AreaChart, 
+  Area,
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip
+} from 'recharts';
 
 interface SmartRouteOptimizerProps {
   groupData: any;

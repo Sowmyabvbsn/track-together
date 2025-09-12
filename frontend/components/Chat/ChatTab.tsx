@@ -202,7 +202,7 @@ function ChatTab({ groupId, members }: ChatTabProps) {
         {tagging && !space ? (
           members?.map((member) => (
             <div
-              className="tagging p-2 hover:bg-muted cursor-pointer border-b"
+              className="p-2 hover:bg-muted cursor-pointer border-b bg-background/80 backdrop-blur-sm"
               onClick={() => clickOnMentionName(member.name)}
               key={member.clerkId}
             >
