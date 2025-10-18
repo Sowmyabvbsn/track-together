@@ -1,5 +1,15 @@
 import { openai, AI_CONFIG } from './openai-client';
 
+// Extend the Window interface to include SpeechRecognition and webkitSpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
+type SpeechRecognition = typeof window.SpeechRecognition;
+
 export class EnhancedVoiceService {
   private static recognition: SpeechRecognition | null = null;
   private static synthesis: SpeechSynthesis | null = null;
@@ -41,7 +51,7 @@ export class EnhancedVoiceService {
       return;
     }
 
-    this.recognition.onresult = async (event) => {
+    this.recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
       const confidence = event.results[0][0].confidence;
 
@@ -66,7 +76,7 @@ export class EnhancedVoiceService {
       }
     };
 
-    this.recognition.onerror = (event) => {
+    this.recognition.onerror = (event:any) => {
       onError?.(event.error);
     };
 

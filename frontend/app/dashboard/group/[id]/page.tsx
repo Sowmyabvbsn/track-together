@@ -36,7 +36,7 @@ import MemberTab from "@/components/Member/MemberTab";
 import axios from "axios";
 import io from "socket.io-client";
 import { Brain } from "lucide-react";
-import RealTimeAIAssistant from "@/components/AI/RealtimeAIAssistant";
+import RealTimeAIAssistant from "@/components/AI/RealTimeAIAssistant";
 import PredictiveRouting from "@/components/AI/PredictiveRouting";
 import SmartSafetyMonitor from "@/components/AI/SmartSafetyMonitor";
 import IntelligentChatEnhanced from "@/components/AI/IntelligentChatEnhanced";
@@ -45,14 +45,7 @@ import AIVoiceCommands from "@/components/AI/AIVoiceCommands";
 import SmartRouteOptimizer from "@/components/AI/SmartRouteOptimizer";
 import PredictiveAnalytics from "@/components/AI/PredictiveAnalytics";
 import Link from "next/link";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const socket = io(API_BASE_URL, {
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-});
+import { getSocket } from "@/lib/socket";
 
 interface Message {
   _id: string;
@@ -130,6 +123,8 @@ export default function GroupPage() {
     Map<string, { lat: number; lng: number }>
   >(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [socket, setSocket] = useState<any>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [aiFeatures, setAiFeatures] = useState({
     realTimeAssistant: true,
     predictiveRouting: true,
@@ -152,7 +147,7 @@ export default function GroupPage() {
         let fetchedGroup: Group | null = getGroup(groupId);
         if (!fetchedGroup) {
           const res = await axios.get(
-            `${API_BASE_URL}/groups?clerkId=${user.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/groups?clerkId=${user.id}`
           );
           fetchedGroup = res.data.find((g: Group) => g._id === groupId) || null;
         }
@@ -187,35 +182,51 @@ export default function GroupPage() {
   useEffect(() => {
     if (!user || !groupId || !isLoaded) return;
     if (activeTab === "chat") {
-      socket.emit("viewingGroup", { groupId, clerkId: user.id });
+      socket?.emit("viewingGroup", { groupId, clerkId: user.id });
     }
-  }, [activeTab, user, groupId, isLoaded]);
+  }, [activeTab, user, groupId, isLoaded, socket]);
 
   useEffect(() => {
     if (!user || !groupId || !shareLocation || !isLoaded) return;
+
+    if (!socket) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setLocation({ latitude, longitude });
-        socket.emit("updateLocation", {
-          groupId,
-          clerkId: user.id,
-          lat: latitude,
-          lng: longitude,
-        });
+        
+        if (isConnected) {
+          socket.emit("updateLocation", {
+            groupId,
+            clerkId: user.id,
+            lat: latitude,
+            lng: longitude,
+          });
+        }
       },
       (err) => console.error("Geolocation error:", err),
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [user, groupId, shareLocation, isLoaded]);
+  }, [user, groupId, shareLocation, isLoaded, socket, isConnected]);
 
   useEffect(() => {
     if (!user || !groupId || !isLoaded) return;
 
-    socket.on("groupLocations", (locations: { clerkId: string; lat: number; lng: number }[]) => {
+    const socketInstance = getSocket();
+    setSocket(socketInstance);
+
+    socketInstance.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    socketInstance.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socketInstance.on("groupLocations", (locations: { clerkId: string; lat: number; lng: number }[]) => {
       const locationMap = new Map();
       locations.forEach((loc) => {
         if (loc.lat && loc.lng) {
@@ -225,40 +236,49 @@ export default function GroupPage() {
       setGroupLocations(locationMap);
     });
 
-    socket.on("locationUpdate", (location: { clerkId: string; lat: number; lng: number }) => {
+    socketInstance.on("locationUpdate", (location: { clerkId: string; lat: number; lng: number }) => {
       if (location.lat && location.lng) {
         setGroupLocations((prev) => new Map(prev).set(location.clerkId, { lat: location.lat, lng: location.lng }));
       }
     });
 
     const toastCooldown = new Map();
-    socket.on("distanceAlert", ({ clerkId, otherClerkId, distance }) => {
-      const isArchived = group && group.reachTime && new Date(group.reachTime) < new Date();
-      if (isArchived) return;
-      if (clerkId === user.id || otherClerkId === user.id) {
-        const alertKey = `${clerkId}-${otherClerkId}`;
-        const lastToast = toastCooldown.get(alertKey) || 0;
-        const now = Date.now();
-        if (now - lastToast > 60000) {
-          const otherName =
-            group?.members.find((m) => m.clerkId === otherClerkId)?.name ||
-            otherClerkId;
-          toast({
-            title: "Distance Alert",
-            description: `You are ${Math.round(
-              distance / 1000
-            )} km away from ${otherName}`,
-            variant: "destructive",
-          });
-          toastCooldown.set(alertKey, now);
+    socketInstance.on(
+      "distanceAlert",
+      ({
+        clerkId,
+        otherClerkId,
+        distance,
+      }: { clerkId: string; otherClerkId: string; distance: number }) => {
+        const isArchived = group && group.reachTime && new Date(group.reachTime) < new Date();
+        if (isArchived) return;
+        if (clerkId === user.id || otherClerkId === user.id) {
+          const alertKey = `${clerkId}-${otherClerkId}`;
+          const lastToast = toastCooldown.get(alertKey) || 0;
+          const now = Date.now();
+          if (now - lastToast > 60000) {
+            const otherName =
+              group?.members.find((m) => m.clerkId === otherClerkId)?.name ||
+              otherClerkId;
+            toast({
+              title: "Distance Alert",
+              description: `You are ${Math.round(
+                distance / 1000
+              )} km away from ${otherName}`,
+              variant: "destructive",
+            });
+            toastCooldown.set(alertKey, now);
+          }
         }
       }
-    });
+    );
 
     return () => {
-      socket.off("groupLocations");
-      socket.off("locationUpdate");
-      socket.off("distanceAlert");
+      socketInstance.off("groupLocations");
+      socketInstance.off("locationUpdate");
+      socketInstance.off("distanceAlert");
+      socketInstance.off("connect");
+      socketInstance.off("disconnect");
     };
   }, [user, groupId, isLoaded, group, toast]);
 
@@ -271,11 +291,12 @@ export default function GroupPage() {
   useEffect(() => {
     if (!user || !groupId) return;
 
+    const socketInstance = getSocket();
+    setSocket(socketInstance);
+
     const fetchMessages = async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/groups/messages/group/${groupId}`
-        );
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/groups/messages/group/${groupId}`);
         setMessages(res.data.data);
       } catch (err) {
         console.error("Failed to fetch messages:", err);
@@ -287,26 +308,30 @@ export default function GroupPage() {
       }
     };
     fetchMessages();
-    socket.connect();
+    socketInstance.connect();
 
-    socket.on("connect", () => {
-      socket.emit("join", { clerkId: user.id, groupId });
-      socket.emit("requestStatusUpdate", { groupId });
+    socketInstance.on("connect", () => {
+      setIsConnected(true);
+      socketInstance.emit("join", { clerkId: user.id, groupId });
+      socketInstance.emit("requestStatusUpdate", { groupId });
       const heartbeatInterval = setInterval(() => {
-        socket.emit("heartbeat", { clerkId: user.id, groupId });
+        if (isConnected) {
+          socketInstance.emit("heartbeat", { clerkId: user.id, groupId });
+        }
       }, 10000);
 
-      socket.on("disconnect", () => {
+      socketInstance.on("disconnect", () => {
+        setIsConnected(false);
         clearInterval(heartbeatInterval);
       });
     });
 
-    socket.on("reconnect", (attempt) => {
-      socket.emit("join", { clerkId: user.id, groupId });
-      socket.emit("requestStatusUpdate", { groupId });
+    socketInstance.on("reconnect", (attempt: number) => {
+      socketInstance.emit("join", { clerkId: user.id, groupId });
+      socketInstance.emit("requestStatusUpdate", { groupId });
     });
 
-    socket.on("connect_error", (err) => {
+    socketInstance.on("connect_error", (err: any) => {
       toast({
         title: "Connection Error",
         description: `Failed to connect to server: ${err.message}. Retrying...`,
@@ -314,11 +339,11 @@ export default function GroupPage() {
       });
     });
 
-    socket.on("receiveMessage", (message: Message) => {
+    socketInstance.on("receiveMessage", (message: Message) => {
       setMessages((prev) => [...prev, message]);
     });
 
-    socket.on("memberStatusUpdate", (updatedMembers: Member[]) => {
+    socketInstance.on("memberStatusUpdate", (updatedMembers: Member[]) => {
       if (Array.isArray(updatedMembers)) {
         setGroup((prevGroup) => {
           if (!prevGroup) return prevGroup;
@@ -326,11 +351,11 @@ export default function GroupPage() {
           return { ...prevGroup, members: newMembers };
         });
       } else {
-        socket.emit("requestStatusUpdate", { groupId });
+        socketInstance.emit("requestStatusUpdate", { groupId });
       }
     });
 
-    socket.on("error", (err) => {
+    socketInstance.on("error", (err: any) => {
       toast({
         title: "Error",
         description: err.message,
@@ -339,14 +364,13 @@ export default function GroupPage() {
     });
 
     return () => {
-      socket.off("connect");
-      socket.off("reconnect");
-      socket.off("connect_error");
-      socket.off("receiveMessage");
-      socket.off("memberStatusUpdate");
-      socket.off("error");
-      socket.off("disconnect");
-      socket.disconnect();
+      socketInstance.off("connect");
+      socketInstance.off("reconnect");
+      socketInstance.off("connect_error");
+      socketInstance.off("receiveMessage");
+      socketInstance.off("memberStatusUpdate");
+      socketInstance.off("error");
+      socketInstance.off("disconnect");
     };
   }, [user, groupId, toast]);
 
@@ -359,6 +383,15 @@ export default function GroupPage() {
   const handleSendMessage = () => {
     if (!newMessage.trim() || !user) return;
 
+    if (!isConnected) {
+      toast({
+        title: "Connection Error",
+        description: "Not connected to server. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const messageData = {
       groupId,
       clerkId: user.id,
@@ -366,7 +399,7 @@ export default function GroupPage() {
       content: newMessage,
     };
 
-    socket.emit("sendMessage", messageData);
+    socket?.emit("sendMessage", messageData);
     setNewMessage("");
   };
 
@@ -374,7 +407,7 @@ export default function GroupPage() {
     if (!user || !group || !groupId) return;
     setIsSaving(true);
     try {
-      const response = await axios.patch(`${API_BASE_URL}/groups/distanceThreshold`, {
+      const response = await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/groups/distanceThreshold`, {
         groupId,
         distanceThreshold,
         clerkId: user.id,
@@ -473,16 +506,28 @@ export default function GroupPage() {
           description: 'AI has notified all group members and emergency services',
           variant: 'destructive'
         });
+        
+        // Send emergency message to group
+        if (socket && isConnected) {
+          socket.emit("sendMessage", {
+            groupId,
+            clerkId: user?.id,
+            clerkName: user?.firstName || "User",
+            content: "🚨 EMERGENCY ALERT: AI has detected an emergency situation. Please check in immediately.",
+          });
+        }
         break;
       case 'location':
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((position) => {
-            socket.emit("updateLocation", {
-              groupId,
-              clerkId: user?.id,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
+            if (socket && isConnected) {
+              socket.emit("updateLocation", {
+                groupId,
+                clerkId: user?.id,
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            }
           });
         }
         break;
@@ -511,14 +556,16 @@ export default function GroupPage() {
     console.log('Emergency triggered:', emergency);
     
     // Send emergency notification to all group members
-    const emergencyMessage = {
-      groupId,
-      clerkId: user?.id,
-      clerkName: user?.firstName || "User",
-      content: `🚨 EMERGENCY: ${emergency.type} - Location: ${location?.latitude}, ${location?.longitude}`,
-    };
-    
-    socket.emit("sendMessage", emergencyMessage);
+    if (socket && isConnected) {
+      const emergencyMessage = {
+        groupId,
+        clerkId: user?.id,
+        clerkName: user?.firstName || "User",
+        content: `🚨 EMERGENCY: ${emergency.type} - Location: ${location?.latitude}, ${location?.longitude}`,
+      };
+      
+      socket.emit("sendMessage", emergencyMessage);
+    }
     
     toast({
       title: 'Emergency Alert Sent',
@@ -552,6 +599,18 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Connection Status Banner */}
+      {!isConnected && (
+        <div className="bg-yellow-100 dark:bg-yellow-900 border-b border-yellow-300 dark:border-yellow-700">
+          <div className="container flex items-center justify-center py-2 px-4">
+            <div className="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-200">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+              Reconnecting to server... Some features may be limited.
+            </div>
+          </div>
+        </div>
+      )}
+      
       <header className="sticky top-16 z-10 border-b bg-background">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
@@ -837,7 +896,11 @@ export default function GroupPage() {
                       groupId={groupId}
                       groupData={group}
                       messages={messages}
-                      userLocation={userLocation}
+                      userLocation={
+                        userLocation
+                          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+                          : undefined
+                      }
                       onActionTrigger={handleAIAction}
                     />
                   )}
@@ -845,7 +908,11 @@ export default function GroupPage() {
                   {aiFeatures.predictiveRouting && (
                     <PredictiveRouting
                       groupData={group}
-                      userLocation={userLocation}
+                      userLocation={
+                        userLocation
+                          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+                          : undefined
+                      }
                       onRouteUpdate={handleRouteUpdate}
                     />
                   )}
@@ -853,7 +920,11 @@ export default function GroupPage() {
                   {aiFeatures.emergencySystem && (
                     <IntelligentEmergencySystem
                       groupId={groupId}
-                      userLocation={userLocation}
+                      userLocation={
+                        userLocation
+                          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+                          : undefined
+                      }
                       groupData={group}
                       onEmergencyAction={handleEmergencyTrigger}
                     />
@@ -875,7 +946,11 @@ export default function GroupPage() {
                   {aiFeatures.routeOptimizer && (
                     <SmartRouteOptimizer
                       groupData={group}
-                      userLocation={userLocation}
+                      userLocation={
+                        userLocation
+                          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+                          : undefined
+                      }
                       memberLocations={groupLocations}
                       onRouteOptimized={handleRouteOptimized}
                     />
@@ -884,7 +959,11 @@ export default function GroupPage() {
                   {aiFeatures.safetyMonitor && (
                     <SmartSafetyMonitor
                       groupData={group}
-                      userLocation={userLocation}
+                      userLocation={
+                        userLocation
+                          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+                          : undefined
+                      }
                       memberLocations={groupLocations}
                       onEmergencyTrigger={handleEmergencyTrigger}
                     />

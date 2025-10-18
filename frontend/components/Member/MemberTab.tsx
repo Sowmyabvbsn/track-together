@@ -23,13 +23,14 @@ interface MemberTabProps {
   group: Group;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-const socket: Socket = io(API_BASE_URL, { autoConnect: false });
+import { getSocket } from "@/lib/socket";
 
 export default function MemberTab({ group }: MemberTabProps) {
   const { user, isLoaded } = useUser();
   const [members, setMembers] = useState<Member[]>(group.members);
   const [statusReceived, setStatusReceived] = useState(false);
+  const [socket, setSocket] = useState<any>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !group.members.length) return;
@@ -38,21 +39,40 @@ export default function MemberTab({ group }: MemberTabProps) {
 
     const checkMemberStatuses = async () => {
       try {
-        socket.connect();
-        socket.emit("join", { clerkId: user?.id, groupId: group._id });
-        socket.emit("requestStatusUpdate", { groupId: group._id });
+        const socketInstance = getSocket();
+        setSocket(socketInstance);
+        
+        socketInstance.connect();
+        
+        socketInstance.on('connect', () => {
+          setIsConnected(true);
+          socketInstance.emit("join", { clerkId: user?.id, groupId: group._id });
+          socketInstance.emit("requestStatusUpdate", { groupId: group._id });
+        });
+        
+        socketInstance.on('disconnect', () => {
+          setIsConnected(false);
+        });
         
         const heartbeatInterval = setInterval(() => {
-          if (user?.id) {
-            socket.emit("heartbeat", { clerkId: user.id, groupId: group._id });
+          if (user?.id && isConnected) {
+            socketInstance.emit("heartbeat", { clerkId: user.id, groupId: group._id });
           }
         }, 10000);
 
         setStatusReceived(true);
 
+        socketInstance.on("memberStatusUpdate", (updatedMembers: Member[]) => {
+          if (Array.isArray(updatedMembers)) {
+            setMembers(updatedMembers);
+          }
+        });
+
         return () => {
           clearInterval(heartbeatInterval);
-          socket.disconnect();
+          socketInstance.off("memberStatusUpdate");
+          socketInstance.off("connect");
+          socketInstance.off("disconnect");
         };
       } catch (error) {
         console.error("Error checking member statuses:", error);
@@ -62,15 +82,8 @@ export default function MemberTab({ group }: MemberTabProps) {
 
     const cleanup = checkMemberStatuses();
 
-    socket.on("memberStatusUpdate", (updatedMembers: Member[]) => {
-      if (Array.isArray(updatedMembers)) {
-        setMembers(updatedMembers);
-      }
-    });
-
     return () => {
       cleanup?.then(cleanupFn => cleanupFn?.());
-      socket.off("memberStatusUpdate");
     };
   }, [isLoaded, group.members, group._id, user?.id]);
 
@@ -80,6 +93,16 @@ export default function MemberTab({ group }: MemberTabProps) {
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
+      {/* Connection Status */}
+      {!isConnected && statusReceived && (
+        <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg p-2 mb-4">
+          <div className="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            Reconnecting to get live member status...
+          </div>
+        </div>
+      )}
+      
       <h2 className="text-xl font-bold mb-4 sticky top-0 bg-background py-2">
         Group Members ({members.length})
       </h2>

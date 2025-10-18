@@ -165,10 +165,14 @@ export default function RealTimeAIAssistant({
       action: insight.actions[actionIndex],
       confidence: insight.confidence,
       groupId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      insightId: insight.id
     };
 
     onActionTrigger(action);
+    
+    // Remove the insight after action is taken
+    setInsights(prev => prev.filter(i => i.id !== insight.id));
   };
 
   const getInsightColor = (type: string) => {

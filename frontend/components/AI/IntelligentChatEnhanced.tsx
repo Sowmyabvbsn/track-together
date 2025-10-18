@@ -130,8 +130,16 @@ export default function IntelligentChatEnhanced({
         groupId,
         members,
       });
-      
-      setMessageAnalysis(analysis);
+
+      // Map analysis result to MessageAnalysis interface
+      setMessageAnalysis({
+        sentiment: analysis.sentiment,
+        intent: analysis.intent,
+        urgency: analysis.urgencyScore,
+        smartReplies: analysis.suggestions || [],
+        suggestedActions: [], // or map from analysis if available
+        autoResponses: analysis.autoResponses || [],
+      });
     } catch (error) {
       console.error('Message analysis failed:', error);
     }

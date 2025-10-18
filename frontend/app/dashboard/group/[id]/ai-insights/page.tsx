@@ -185,7 +185,7 @@ export default function AIInsightsPage() {
                 transition={{ delay: 0.2 }}
               >
                 <SmartSuggestions
-                  groupId={groupId}
+                  groupId={groupId ?? ''}
                   groupData={group}
                   userLocation={userLocation}
                   onSuggestionApply={handleSuggestionApply}
@@ -200,7 +200,7 @@ export default function AIInsightsPage() {
                 transition={{ delay: 0.2 }}
               >
                 <AIInsightsDashboard
-                  groupId={groupId}
+                  groupId={groupId ?? ''}
                   groupData={group}
                   messages={messages}
                   locations={Array.from(memberLocations.entries()).map(([clerkId, loc]) => ({
@@ -208,7 +208,7 @@ export default function AIInsightsPage() {
                     ...loc,
                     lastUpdated: new Date()
                   }))}
-                  onInsightAction={(action) => {
+                  onInsightAction={(action: any) => {
                     console.log('AI Insight Action:', action);
                   }}
                 />
@@ -222,7 +222,7 @@ export default function AIInsightsPage() {
                 transition={{ delay: 0.2 }}
               >
                 <SmartNotifications
-                  groupId={groupId}
+                  groupId={groupId ?? ''}
                   userId={user?.id || ''}
                   onSettingsChange={handleNotificationSettingsChange}
                 />
@@ -254,11 +254,11 @@ export default function AIInsightsPage() {
                 transition={{ delay: 0.2 }}
               >
                 <RealTimeAIAssistant
-                  groupId={groupId}
+                  groupId={groupId ?? ''}
                   groupData={group}
                   messages={[]}
                   userLocation={userLocation}
-                  onActionTrigger={(action) => {
+                  onActionTrigger={(action: unknown) => {
                     console.log('AI Action:', action);
                   }}
                 />
@@ -272,9 +272,9 @@ export default function AIInsightsPage() {
                 transition={{ delay: 0.2 }}
               >
                 <AIVoiceCommands
-                  groupId={groupId}
+                  groupId={groupId ?? ''}
                   groupData={group}
-                  onCommandExecuted={(command) => {
+                  onCommandExecuted={(command: any) => {
                     console.log('Voice Command:', command);
                   }}
                 />
