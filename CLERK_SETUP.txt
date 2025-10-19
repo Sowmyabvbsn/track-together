@@ -1,0 +1,61 @@
+===============================================
+CLERK AUTHENTICATION SETUP INSTRUCTIONS
+===============================================
+
+The application is currently in "keyless mode" because Clerk API keys are missing.
+
+STEPS TO FIX:
+
+1. Go to https://clerk.com and sign up/sign in
+
+2. Create a new application or select existing one
+
+3. Go to "API Keys" section in your Clerk dashboard
+
+4. Copy the following keys:
+   - Publishable Key (starts with pk_test_ or pk_live_)
+   - Secret Key (starts with sk_test_ or sk_live_)
+
+5. Update the .env.local file in /frontend/ directory:
+
+   Replace:
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+   CLERK_SECRET_KEY=your_clerk_secret_key_here
+
+   With your actual keys:
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
+   CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxx
+
+6. IMPORTANT: Also update the root .env file with the same keys
+
+7. Restart your development server:
+   cd frontend
+   npm run dev
+
+8. Clerk should now work properly!
+
+===============================================
+ADDITIONAL SETUP (Optional)
+===============================================
+
+LocationIQ API Key (for maps):
+- Sign up at https://locationiq.com
+- Get your API key
+- Add to .env.local:
+  NEXT_PUBLIC_LOCATIONIQ_API_KEY=your_key_here
+
+MongoDB (Backend):
+- Ensure MongoDB is running: mongod
+- Or update MONGO_URI in backend/.env to your MongoDB connection string
+
+===============================================
+VERIFICATION
+===============================================
+
+After adding Clerk keys:
+1. Go to http://localhost:3000
+2. Click "Sign In" or "Sign Up"
+3. You should see Clerk's authentication UI
+4. The "keyless mode" error should be gone
+
+===============================================
