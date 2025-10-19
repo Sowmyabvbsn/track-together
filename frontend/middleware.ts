@@ -5,14 +5,20 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api(.*)",
-  "/join(.*)"
+  "/join(.*)",
+  "/setup(.*)"
 ])
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (!isPublicRoute(request)) {
+      await auth.protect()
+    }
+  },
+  {
+    clockSkewInMs: 60000,
   }
-})
+)
 
 export const config = {
   matcher: [

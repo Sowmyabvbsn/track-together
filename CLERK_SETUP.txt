@@ -2,11 +2,24 @@
 CLERK AUTHENTICATION SETUP INSTRUCTIONS
 ===============================================
 
-The application is currently in "keyless mode" because Clerk API keys are missing.
+ISSUES DETECTED:
+1. Clock skew (system time ~30 seconds behind) ✓ FIXED
+2. Infinite redirect loop ✓ FIXED
+3. Missing Clerk API keys (still needs your keys)
 
-STEPS TO FIX:
+WHAT WAS FIXED:
+- Added clockSkewInMs: 60000 to middleware (tolerates up to 60 sec clock difference)
+- Added proper Clerk redirect URLs to .env.local
+- Middleware now handles clock skew gracefully
+- Added /setup route to public routes
 
-1. Go to https://clerk.com and sign up/sign in
+REMAINING STEPS:
+
+1. FIX YOUR SYSTEM CLOCK (Recommended but not required):
+   - Linux/Mac: sudo ntpdate -s time.nist.gov
+   - Or enable automatic time sync in system settings
+
+2. Go to https://clerk.com and sign up/sign in
 
 2. Create a new application or select existing one
 
