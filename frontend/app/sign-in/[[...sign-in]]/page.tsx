@@ -14,7 +14,8 @@ export default function SignInPage() {
         }}
         routing="path"
         signUpUrl="/sign-up"
-        redirectUrl="/dashboard"
+        afterSignInUrl="/dashboard"
+        forceRedirectUrl="/dashboard"
       />
     </div>
   )

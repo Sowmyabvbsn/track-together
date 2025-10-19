@@ -17,6 +17,8 @@ export default clerkMiddleware(
   },
   {
     clockSkewInMs: 60000,
+    signInUrl: "/sign-in",
+    signUpUrl: "/sign-up",
   }
 )
 

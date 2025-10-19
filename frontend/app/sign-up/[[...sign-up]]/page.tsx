@@ -4,7 +4,7 @@ export default function SignUpPage() {
   return (
     <div className="flex max-h-screen items-center justify-center py-12">
       <SignUp
-      path="/sign-up"
+        path="/sign-up"
         appearance={{
           elements: {
             rootBox: "mx-auto",
@@ -14,7 +14,8 @@ export default function SignUpPage() {
         }}
         routing="path"
         signInUrl="/sign-in"
-        redirectUrl="/dashboard"
+        afterSignUpUrl="/dashboard"
+        forceRedirectUrl="/dashboard"
       />
     </div>
   )
