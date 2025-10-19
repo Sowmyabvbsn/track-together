@@ -23,6 +23,10 @@ app.use(express.json());
 app.set('io', io);
 app.set('socketio', io);
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend is running' });
+});
+
 app.use('/groups', groupRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/ai', aiRoutes);
