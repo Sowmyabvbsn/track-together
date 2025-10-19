@@ -44,6 +44,7 @@ import IntelligentEmergencySystem from "@/components/AI/IntelligentEmergencySyst
 import AIVoiceCommands from "@/components/AI/AIVoiceCommands";
 import SmartRouteOptimizer from "@/components/AI/SmartRouteOptimizer";
 import PredictiveAnalytics from "@/components/AI/PredictiveAnalytics";
+import RealTimeSafetyAI from "@/components/AI/RealTimeSafetyAI";
 import Link from "next/link";
 import { getSocket } from "@/lib/socket";
 
@@ -943,6 +944,18 @@ export default function GroupPage() {
                 </div>
                 
                 <div className="space-y-6">
+                  <RealTimeSafetyAI
+                    groupId={groupId}
+                    userId={user?.id || ''}
+                    onAlertClick={(alert) => {
+                      console.log('Alert clicked:', alert);
+                      toast({
+                        title: alert.title,
+                        description: alert.description
+                      });
+                    }}
+                  />
+
                   {aiFeatures.routeOptimizer && (
                     <SmartRouteOptimizer
                       groupData={group}
@@ -955,7 +968,7 @@ export default function GroupPage() {
                       onRouteOptimized={handleRouteOptimized}
                     />
                   )}
-                  
+
                   {aiFeatures.safetyMonitor && (
                     <SmartSafetyMonitor
                       groupData={group}

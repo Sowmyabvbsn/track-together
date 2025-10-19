@@ -6,11 +6,10 @@ import connectDB from './config/db.js';
 import groupRoutes from './routes/groupRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import safetyRoutes from './routes/safetyRoutes.js';
 import corsOptions from './middleware/corsConfig.js';
 import cors from 'cors';
 import setupSocket from './socket/socketHandlers.js';
-
-
 
 dotenv.config();
 
@@ -22,10 +21,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.set('io', io);
+app.set('socketio', io);
 
 app.use('/groups', groupRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/ai', aiRoutes);
+app.use('/safety', safetyRoutes);
 
 connectDB();
 setupSocket(io);

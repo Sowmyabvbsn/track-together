@@ -5,6 +5,7 @@ import UserLocation from '../models/UserLocation.js';
 import Notification from '../models/Notification.js';
 import { getDistance } from 'geolib';
 import mongoose from 'mongoose';
+import safetyMonitor from '../services/safetyMonitor.js';
 
 const setupSocket = (io) => {
   const onlineUsers = new Map();
@@ -194,7 +195,14 @@ const setupSocket = (io) => {
         const groupIdStr = groupId.toString();
         const location = await UserLocation.findOneAndUpdate(
           { groupId, clerkId },
-          { lat, lng, lastUpdated: new Date() },
+          {
+            latitude: lat,
+            longitude: lng,
+            lat,
+            lng,
+            timestamp: new Date(),
+            lastUpdated: new Date()
+          },
           { upsert: true, new: true }
         );
         io.to(groupIdStr).emit('locationUpdate', { ...location._doc, isOnline: onlineUsers.has(clerkId) });
@@ -203,6 +211,10 @@ const setupSocket = (io) => {
           ...loc._doc,
           isOnline: onlineUsers.has(loc.clerkId),
         })));
+
+        safetyMonitor.performSafetyCheck(groupId, clerkId, io).catch(err => {
+          console.error('Safety check error:', err);
+        });
 
         const group = await Group.findById(groupId);
         if (!group) return;
