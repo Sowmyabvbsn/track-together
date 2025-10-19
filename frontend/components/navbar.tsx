@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MapPin, Users, Bell, Menu } from "lucide-react";
+import { MapPin, Users, Bell, Menu, Brain } from "lucide-react";
 import { useUser, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
@@ -53,12 +53,21 @@ export default function Navbar() {
               </Button>
             </Link>
             <Link href="/notifications">
-              <Button 
+              <Button
                 variant={pathname === "/notifications" ? "default" : "ghost"}
                 size="sm"
               >
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
+              </Button>
+            </Link>
+            <Link href="/dashboard/ai-features">
+              <Button
+                variant={pathname === "/dashboard/ai-features" ? "default" : "ghost"}
+                size="sm"
+              >
+                <Brain className="mr-2 h-4 w-4" />
+                AI Features
               </Button>
             </Link>
           </div>
@@ -99,6 +108,12 @@ export default function Navbar() {
                     <Link href="/notifications">
                       <Bell className="mr-2 h-4 w-4" />
                       Notifications
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/ai-features">
+                      <Brain className="mr-2 h-4 w-4" />
+                      AI Features
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
