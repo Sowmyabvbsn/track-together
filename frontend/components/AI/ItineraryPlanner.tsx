@@ -34,7 +34,20 @@ export function ItineraryPlanner({ groupId, chatMessages }: ItineraryPlannerProp
     try {
       const recentMessages = chatMessages.slice(-20);
       const chatContext = recentMessages
-        .map(m => `${m.userName}: ${m.content}`)
+        .map(m => {
+          const userLabel =
+            (m as any).userName ||
+            (m as any).user ||
+            (m as any).author ||
+            'User';
+          const messageText =
+            (m as any).content ??
+            (m as any).text ??
+            (m as any).message ??
+            (m as any).body ??
+            '';
+          return `${userLabel}: ${messageText}`;
+        })
         .join('\n');
 
       const prompt = `Analyze this group chat conversation and extract any plans, destinations, or activities mentioned. Format as a JSON array of items with structure: {"title": "activity", "location": "place if mentioned", "time": "time if mentioned"}
