@@ -11,6 +11,7 @@ import { ContextAwareChatAssistant } from '@/components/AI/ContextAwareChatAssis
 import { MessageSummarizer } from '@/components/AI/MessageSummarizer';
 import { PredictiveNotifications } from '@/components/AI/PredictiveNotifications';
 import { VoiceActionCommands } from '@/components/AI/VoiceActionCommands';
+import AIRouteOptimizer from '@/components/AI/AIRouteOptimizer';
 import { useUser } from '@clerk/nextjs';
 
 export default function AIFeaturesPage() {
@@ -138,10 +139,14 @@ export default function AIFeaturesPage() {
       </div>
 
       <Tabs defaultValue="coordinator" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
           <TabsTrigger value="coordinator" className="gap-2">
             <Navigation className="h-4 w-4" />
             <span className="hidden sm:inline">Coordinator</span>
+          </TabsTrigger>
+          <TabsTrigger value="route" className="gap-2">
+            <Navigation className="h-4 w-4" />
+            <span className="hidden sm:inline">Route AI</span>
           </TabsTrigger>
           <TabsTrigger value="itinerary" className="gap-2">
             <Calendar className="h-4 w-4" />
@@ -167,6 +172,22 @@ export default function AIFeaturesPage() {
 
         <TabsContent value="coordinator">
           <SmartGroupCoordinator groupId={groupId} members={members} />
+        </TabsContent>
+
+        <TabsContent value="route">
+          {currentLocation ? (
+            <AIRouteOptimizer
+              origin={currentLocation}
+              destination={{ lat: 40.7580, lng: -73.9855 }}
+              waypoints={[]}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">Getting your location...</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="itinerary">
