@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, MapPin, MessageSquare, Search, Navigation, Volume2 } from 'lucide-react';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 
 interface VoiceActionCommandsProps {
   groupId: string;
@@ -161,7 +161,7 @@ ${locationContext}
 
 Generate a natural, casual message to send to their group chat based on what they said. Keep it brief and friendly.`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       return result.response.trim();
     } catch (error) {
       return "Hey everyone, just wanted to send a quick update!";
@@ -209,7 +209,7 @@ Generate a natural, casual message to send to their group chat based on what the
 
 Provide a brief, helpful response (1-2 sentences). If it's a question, answer it. If it's a request, acknowledge it.`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       return result.response.trim();
     } catch (error) {
       return "I'm here to help! Try commands like 'Where is everyone?' or 'Find coffee nearby'";

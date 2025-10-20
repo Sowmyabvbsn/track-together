@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, MessageSquare, TrendingUp, AlertTriangle, MapPin, Send, Sparkles } from 'lucide-react';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 import type { Message } from '@/types/message';
 
 interface SentimentAnalysis {
@@ -61,7 +61,7 @@ ${chatContext}
 
 Respond with JSON: {"overall": "positive|neutral|negative|concerned", "confidence": 0-1, "indicators": ["reason1", "reason2"], "suggestion": "what the group might need"}`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       const response = result.response;
 
       try {
@@ -101,7 +101,7 @@ ${locationContext}
 Format as JSON array: [{"text": "reply message", "context": "why this reply"}]
 Keep replies casual, friendly, and contextual.`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       const response = result.response;
 
       try {
@@ -134,7 +134,7 @@ User wants to: ${customPrompt}
 
 Generate a natural, friendly message they can send to the group that accomplishes this.`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       onSendMessage(result.response.trim());
       setCustomPrompt('');
     } catch (error) {

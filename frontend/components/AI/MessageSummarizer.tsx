@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, MapPin, Users, AlertCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 import type { Message } from '@/types/message';
 
 interface MessageSummary {
@@ -82,7 +82,7 @@ Respond with JSON:
   "questions": ["question1"]
 }`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       const response = result.response;
 
       try {

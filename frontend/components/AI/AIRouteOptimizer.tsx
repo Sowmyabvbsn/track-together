@@ -20,7 +20,7 @@ import {
   Info
 } from 'lucide-react';
 import { hereAPIClient, isHereAPIConfigured, type Coordinates, type Waypoint, type OptimizedRoute, type TrafficIncident } from '@/lib/here-api-client';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
@@ -140,7 +140,7 @@ Provide a JSON response with this structure:
   "suggestions": ["helpful", "suggestions", "for", "the", "journey"]
 }`;
 
-      const response = await ollamaClient.generate(prompt);
+      const response = await groqClient.generate(prompt);
 
       try {
         const jsonMatch = response.response.match(/\{[\s\S]*\}/);

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, Clock, Plus, Trash2, CheckCircle2, Navigation } from 'lucide-react';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 import type { Message } from '@/types/message';
 
 interface ItineraryItem {
@@ -57,7 +57,7 @@ ${chatContext}
 
 Return ONLY a valid JSON array, no explanations. If no plans found, return empty array [].`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
       const response = result.response;
 
       try {

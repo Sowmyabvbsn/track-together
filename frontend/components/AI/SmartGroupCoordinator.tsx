@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Users, Coffee, Utensils, ShoppingBag, Clock, AlertCircle } from 'lucide-react';
 import { locationIQClient, type Location, type Place } from '@/lib/locationiq-client';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 
 interface Member {
   id: string;
@@ -113,9 +113,9 @@ export function SmartGroupCoordinator({ groupId, members }: SmartGroupCoordinato
     }
 
     try {
-      const isOllamaAvailable = await ollamaClient.checkHealth();
+      const isGroqConfigured = groqClient.isConfigured();
 
-      if (!isOllamaAvailable) {
+      if (!isGroqConfigured) {
         setAiRecommendation(generateFallbackRecommendation(points, groupMembers));
         return;
       }
@@ -132,7 +132,7 @@ ${points.slice(0, 3).map((p, i) => `${i + 1}. ${p.name}
 
 Provide a brief, friendly recommendation (2-3 sentences) on which location is best and why. Consider fairness, convenience, and total travel time.`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt, { max_tokens: 200 });
       setAiRecommendation(result.response || generateFallbackRecommendation(points, groupMembers));
     } catch (error) {
       console.error('AI recommendation error:', error);

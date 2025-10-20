@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Clock, Navigation, Users, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { locationIQClient } from '@/lib/locationiq-client';
-import { ollamaClient } from '@/lib/ollama-client';
+import { groqClient } from '@/lib/groq-client';
 
 interface Member {
   id: string;
@@ -143,7 +143,7 @@ Destination: ${destination ? 'Set' : 'Not set'}
 
 Based on these factors, suggest one actionable improvement for coordination. Be brief (1 sentence).`;
 
-      const result = await ollamaClient.generate(prompt);
+      const result = await groqClient.generate(prompt);
 
       return {
         id: `suggestion-${Date.now()}`,
