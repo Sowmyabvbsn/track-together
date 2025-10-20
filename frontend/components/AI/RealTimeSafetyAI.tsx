@@ -18,7 +18,7 @@ import {
   Bell
 } from 'lucide-react';
 import axios from 'axios';
-import { socket } from '@/lib/socket';
+import { getSocket } from '@/lib/socket';
 import { useToast } from '@/hooks/use-toast';
 
 interface SafetyAlert {
@@ -62,6 +62,8 @@ export default function RealTimeSafetyAI({ groupId, userId, onAlertClick }: Real
   }, [groupId]);
 
   useEffect(() => {
+    const socket = getSocket();
+
     socket.on('safety_alert', handleNewAlert);
     socket.on('alert_acknowledged', handleAlertAcknowledged);
     socket.on('alert_resolved', handleAlertResolved);
