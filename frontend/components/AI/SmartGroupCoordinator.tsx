@@ -107,7 +107,19 @@ export function SmartGroupCoordinator({ groupId, members }: SmartGroupCoordinato
   };
 
   const generateAIRecommendation = async (points: MeetingPoint[], groupMembers: Member[]) => {
+    if (points.length === 0) {
+      setAiRecommendation('No suitable meeting points found in this area. Try a different location type.');
+      return;
+    }
+
     try {
+      const isOllamaAvailable = await ollamaClient.checkHealth();
+
+      if (!isOllamaAvailable) {
+        setAiRecommendation(generateFallbackRecommendation(points, groupMembers));
+        return;
+      }
+
       const prompt = `You are a smart group coordinator AI. Analyze this meeting scenario:
 
 Group Members: ${groupMembers.length} people
@@ -121,11 +133,38 @@ ${points.slice(0, 3).map((p, i) => `${i + 1}. ${p.name}
 Provide a brief, friendly recommendation (2-3 sentences) on which location is best and why. Consider fairness, convenience, and total travel time.`;
 
       const result = await ollamaClient.generate(prompt);
-      setAiRecommendation(result.response);
+      setAiRecommendation(result.response || generateFallbackRecommendation(points, groupMembers));
     } catch (error) {
       console.error('AI recommendation error:', error);
-      setAiRecommendation('Unable to generate AI recommendation. Check Ollama connection.');
+      setAiRecommendation(generateFallbackRecommendation(points, groupMembers));
     }
+  };
+
+  const generateFallbackRecommendation = (points: MeetingPoint[], groupMembers: Member[]): string => {
+    if (points.length === 0) return 'No suitable locations found.';
+
+    const topPoint = points[0];
+    const avgDistance = topPoint.totalDistance / groupMembers.length;
+
+    let recommendation = `I recommend "${topPoint.name}" as your meeting point. `;
+
+    if (topPoint.maxDistance < 2) {
+      recommendation += 'All members are within 2km, making it very convenient for everyone. ';
+    } else if (topPoint.maxDistance < 5) {
+      recommendation += 'Everyone is within a reasonable distance (under 5km). ';
+    } else {
+      recommendation += `The furthest member is ${topPoint.maxDistance.toFixed(1)}km away, but this is the most balanced option. `;
+    }
+
+    if (points.length > 1) {
+      const secondBest = points[1];
+      const distanceDiff = secondBest.totalDistance - topPoint.totalDistance;
+      if (distanceDiff < 1) {
+        recommendation += `"${secondBest.name}" is also a great alternative with similar total distance.`;
+      }
+    }
+
+    return recommendation;
   };
 
   const findNearestMemberForTask = (task: string): Member | null => {
