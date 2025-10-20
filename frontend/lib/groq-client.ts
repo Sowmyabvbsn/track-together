@@ -6,7 +6,7 @@ interface GroqConfig {
 
 const GROQ_CONFIG: GroqConfig = {
   apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
-  model: 'llama-3.1-70b-versatile',
+  model: 'llama-3.3-70b-versatile',
   enabled: !!process.env.NEXT_PUBLIC_GROQ_API_KEY,
 };
 
