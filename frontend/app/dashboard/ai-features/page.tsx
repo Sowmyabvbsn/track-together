@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Sparkles, MessageSquare, Calendar, Bell, Mic, Navigation } from 'lucide-react';
+import { Brain, Sparkles, MessageSquare, Calendar, Bell, Mic, Navigation, AlertCircle } from 'lucide-react';
 import { SmartGroupCoordinator } from '@/components/AI/SmartGroupCoordinator';
 import { ItineraryPlanner } from '@/components/AI/ItineraryPlanner';
 import { ContextAwareChatAssistant } from '@/components/AI/ContextAwareChatAssistant';
@@ -13,81 +13,136 @@ import { PredictiveNotifications } from '@/components/AI/PredictiveNotifications
 import { VoiceActionCommands } from '@/components/AI/VoiceActionCommands';
 import AIRouteOptimizer from '@/components/AI/AIRouteOptimizer';
 import { useUser } from '@clerk/nextjs';
+import { useRouter, useSearchParams } from 'next/navigation';
+import axios from 'axios';
 
 export default function AIFeaturesPage() {
   const { user } = useUser();
-  const [groupId, setGroupId] = useState<string>('demo-group');
+  const searchParams = useSearchParams();
+  const urlGroupId = searchParams.get('groupId');
+  const [groupId, setGroupId] = useState<string>(urlGroupId || 'demo-group');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [group, setGroup] = useState<any>(null);
 
   useEffect(() => {
-    const demoMessages = [
-      {
-        id: '1',
-        content: 'Hey everyone, heading to the mall now!',
-        userName: 'Alice',
-        userId: 'user1',
-        timestamp: new Date(Date.now() - 30 * 60000),
-        groupId
-      },
-      {
-        id: '2',
-        content: 'Cool, I\'m at the coffee shop. Should I wait?',
-        userName: 'Bob',
-        userId: 'user2',
-        timestamp: new Date(Date.now() - 25 * 60000),
-        groupId
-      },
-      {
-        id: '3',
-        content: 'Let\'s meet at the restaurant for lunch at 1pm',
-        userName: 'Charlie',
-        userId: 'user3',
-        timestamp: new Date(Date.now() - 20 * 60000),
-        groupId
-      },
-      {
-        id: '4',
-        content: 'Sounds good! Anyone know if they have outdoor seating?',
-        userName: 'Alice',
-        userId: 'user1',
-        timestamp: new Date(Date.now() - 15 * 60000),
-        groupId
-      },
-      {
-        id: '5',
-        content: 'After lunch, maybe we can check out that new store?',
-        userName: 'Bob',
-        userId: 'user2',
-        timestamp: new Date(Date.now() - 10 * 60000),
-        groupId
-      }
-    ];
+    const fetchGroupData = async () => {
+      if (!user || groupId === 'demo-group') {
+        const demoMessages = [
+          {
+            id: '1',
+            content: 'Hey everyone, heading to the mall now!',
+            userName: 'Alice',
+            userId: 'user1',
+            timestamp: new Date(Date.now() - 30 * 60000),
+            groupId
+          },
+          {
+            id: '2',
+            content: 'Cool, I\'m at the coffee shop. Should I wait?',
+            userName: 'Bob',
+            userId: 'user2',
+            timestamp: new Date(Date.now() - 25 * 60000),
+            groupId
+          },
+          {
+            id: '3',
+            content: 'Let\'s meet at the restaurant for lunch at 1pm',
+            userName: 'Charlie',
+            userId: 'user3',
+            timestamp: new Date(Date.now() - 20 * 60000),
+            groupId
+          }
+        ];
 
-    const demoMembers = [
-      {
-        id: 'user1',
-        name: 'Alice',
-        location: { lat: 40.7589, lng: -73.9851 },
-        lastUpdated: new Date()
-      },
-      {
-        id: 'user2',
-        name: 'Bob',
-        location: { lat: 40.7614, lng: -73.9776 },
-        lastUpdated: new Date()
-      },
-      {
-        id: 'user3',
-        name: 'Charlie',
-        location: { lat: 40.7580, lng: -73.9855 },
-        lastUpdated: new Date()
-      }
-    ];
+        const demoMembers = [
+          {
+            id: 'user1',
+            name: 'Alice',
+            location: { lat: 17.6868, lng: 83.2185 },
+            lastUpdated: new Date()
+          },
+          {
+            id: 'user2',
+            name: 'Bob',
+            location: { lat: 17.6869, lng: 83.2186 },
+            lastUpdated: new Date()
+          },
+          {
+            id: 'user3',
+            name: 'Charlie',
+            location: { lat: 17.6870, lng: 83.2187 },
+            lastUpdated: new Date()
+          }
+        ];
 
-    setChatMessages(demoMessages);
-    setMembers(demoMembers);
+        setChatMessages(demoMessages);
+        setMembers(demoMembers);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
+        const groupResponse = await axios.get(`${backendUrl}/api/groups/${groupId}`);
+        const groupData = groupResponse.data;
+        setGroup(groupData);
+
+        try {
+          const messagesResponse = await axios.get(`${backendUrl}/api/messages/${groupId}`);
+          setChatMessages(messagesResponse.data || []);
+        } catch (err) {
+          console.log('No messages found, using empty array');
+          setChatMessages([]);
+        }
+
+        const memberLocations = await Promise.all(
+          groupData.members.map(async (member: any) => {
+            try {
+              const locationResponse = await axios.get(
+                `${backendUrl}/api/locations/${member.clerkId}/latest`
+              );
+              return {
+                id: member.clerkId,
+                name: member.name,
+                location: {
+                  lat: locationResponse.data.latitude,
+                  lng: locationResponse.data.longitude
+                },
+                lastUpdated: new Date(locationResponse.data.timestamp)
+              };
+            } catch (err) {
+              return {
+                id: member.clerkId,
+                name: member.name,
+                location: { lat: 17.6868, lng: 83.2185 },
+                lastUpdated: new Date()
+              };
+            }
+          })
+        );
+
+        setMembers(memberLocations);
+      } catch (error) {
+        console.error('Error fetching group data:', error);
+        setMembers([
+          {
+            id: 'user1',
+            name: 'Demo User',
+            location: { lat: 17.6868, lng: 83.2185 },
+            lastUpdated: new Date()
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroupData();
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -98,13 +153,13 @@ export default function AIFeaturesPage() {
           });
         },
         () => {
-          setCurrentLocation({ lat: 40.7589, lng: -73.9851 });
+          setCurrentLocation({ lat: 17.6868, lng: 83.2185 });
         }
       );
     } else {
-      setCurrentLocation({ lat: 40.7589, lng: -73.9851 });
+      setCurrentLocation({ lat: 17.6868, lng: 83.2185 });
     }
-  }, []);
+  }, [user, groupId]);
 
   const handleSendMessage = (message: string) => {
     const newMessage = {
@@ -117,6 +172,19 @@ export default function AIFeaturesPage() {
     };
     setChatMessages(prev => [...prev, newMessage]);
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading AI features...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
@@ -134,9 +202,28 @@ export default function AIFeaturesPage() {
         </div>
         <Badge variant="secondary" className="mt-2">
           <Sparkles className="h-3 w-3 mr-1" />
-          Powered by Ollama (Local AI)
+          Powered by Groq AI
         </Badge>
       </div>
+
+      {groupId === 'demo-group' && (
+        <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
+          <CardContent className="pt-6">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  Using Demo Data
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  You're viewing AI features with demo data. To use with real group data,
+                  navigate to a group from your dashboard and access AI features from there.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="coordinator" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
@@ -178,7 +265,7 @@ export default function AIFeaturesPage() {
           {currentLocation ? (
             <AIRouteOptimizer
               origin={currentLocation}
-              destination={{ lat: 40.7580, lng: -73.9855 }}
+              destination={{ lat: 17.6880, lng: 83.2195 }}
               waypoints={[]}
             />
           ) : (
@@ -216,7 +303,7 @@ export default function AIFeaturesPage() {
             groupId={groupId}
             members={members}
             currentUserId={user?.id || 'current-user'}
-            destination={{ lat: 40.7589, lng: -73.9851 }}
+            destination={currentLocation || { lat: 17.6868, lng: 83.2185 }}
           />
         </TabsContent>
 
@@ -243,7 +330,7 @@ export default function AIFeaturesPage() {
             <div className="text-sm">
               <strong className="block mb-1">Smart Coordinator</strong>
               <p className="text-muted-foreground text-xs">
-                AI suggests optimal meeting points based on everyone's location using LocationIQ API
+                AI suggests optimal meeting points based on everyone's actual location using LocationIQ API
               </p>
             </div>
             <div className="text-sm">
@@ -281,8 +368,8 @@ export default function AIFeaturesPage() {
           <div className="pt-3 border-t text-xs text-muted-foreground">
             <strong className="block mb-1">Free Third-Party Services Used:</strong>
             <ul className="list-disc list-inside space-y-1">
-              <li>Ollama (Local AI) - Free, runs on your machine</li>
-              <li>LocationIQ - Free tier with 5,000 requests/day</li>
+              <li>Groq AI - Free cloud AI with ultra-fast responses</li>
+              <li>LocationIQ - Free tier with 5,000 requests/day for location search</li>
               <li>Web Speech API - Built into modern browsers, completely free</li>
               <li>Speech Synthesis API - Browser-native text-to-speech</li>
             </ul>
